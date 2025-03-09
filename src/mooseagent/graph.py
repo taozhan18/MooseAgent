@@ -4,6 +4,8 @@ Works with a chat model with tool calling support.
 """
 
 import sys
+from langchain_core.prompts import ChatPromptTemplate
+from langgraph.checkpoint.memory import MemorySaver
 
 sys.path.append("../")
 from datetime import datetime, timezone
@@ -17,21 +19,26 @@ from langgraph.prebuilt import ToolNode
 from mooseagent.configuration import Configuration
 from mooseagent.state import (
     ArchitectState,
-    ModulesState,
-    ArchitectInputState,
     ArchitectOutputState,
-    ReviewState,
-    InpcardState,
+    ReviewArchitectState,
+    ReviewWriterState,
     WriterState,
+    InpcardState,
 )
 
-
-from mooseagent.utils import load_chat_model, tran_list_to_str
+from mooseagent.self_rag.graph import RAG
+from mooseagent.utils import load_chat_model, tran_list_to_str, combine_code_with_description
 from mooseagent.prompts import (
     SYSTEM_ARCHITECT_PROMPT,
-    SYSTEM_REVIEW1_PROMPT,
-    SYSTEM_INPCARD_PROMPT,
-    SYSTEM_REVIEW2_PROMPT,
+    SYSTEM_REVIEW_ARCHITECT_PROMPT,
+    SYSTEM_WRITER_PROMPT,
+    SYSTEM_REVIEW_WRITER_PROMPT,
+    SYSTEM_REPORT_PROMPT,
+    HUMAN_ARCHITECT_PROMPT,
+    HUMAN_REVIEW_ARCHITECT_PROMPT,
+    HUMAN_WRITER_PROMPT,
+    HUMAN_REVIEW_WRITER_PROMPT,
+    HUMAN_REPORT_PROMPT,
 )
 from dotenv import load_dotenv
 
@@ -49,23 +56,27 @@ def generate_architect(state: ArchitectState, config: RunnableConfig):
     """
 
     # input
-    topic = state["topic"]
+    requirement = state["requirement"]
     feedback = state["feedback"] if state.get("feedback") else ""
 
     # Get configuration
     configuration = Configuration.from_runnable_config(config)
 
-    architect = load_chat_model(configuration.architect_model).with_structured_output(ModulesState)
-    system_message_architect = SYSTEM_ARCHITECT_PROMPT.format(topic=topic, feedback=feedback)
+    architect = load_chat_model(configuration.architect_model).with_structured_output(ArchitectOutputState)
+    human_message_architect = HUMAN_ARCHITECT_PROMPT.format(requirement=requirement, feedback=feedback)
 
     architect_reply = architect.invoke(
         [
-            SystemMessage(content=system_message_architect),
-            HumanMessage(content=""),
+            SystemMessage(content=SYSTEM_ARCHITECT_PROMPT),
+            HumanMessage(content=human_message_architect),
         ]
     )
 
-    return {"modules": architect_reply}
+    return {
+        "overall_description": architect_reply.overall_description,
+        "structured_requirements": architect_reply.structured_requirements,
+        "retrieve_tasks": architect_reply.retrieval_tasks,
+    }
 
 
 def review_architect(state: ArchitectState, config: RunnableConfig):
@@ -76,25 +87,25 @@ def review_architect(state: ArchitectState, config: RunnableConfig):
     Returns:
         dict: A dictionary containing the model's response
     """
-    topic = state["topic"]
-    modules = state["modules"]
-    overall_architect = modules.overall_architect
-    modules_description = tran_list_to_str(modules.modules_description)
-    system_message_review = SYSTEM_REVIEW1_PROMPT.format(
-        topic=topic, overall_architect=overall_architect, modules=modules_description
+    human_message_review = HUMAN_REVIEW_ARCHITECT_PROMPT.format(
+        requirement=state["requirement"],
+        structured_requirements=state["structured_requirements"],
+        retrieve_tasks=state["retrieve_tasks"],
     )
 
     # Get configuration
     configuration = Configuration.from_runnable_config(config)
-    review1 = load_chat_model(configuration.review1_model).with_structured_output(ReviewState)
-    review_reply = review1.invoke(
+    review_architect = load_chat_model(configuration.review_architect_model).with_structured_output(
+        ReviewArchitectState
+    )
+    review_reply = review_architect.invoke(
         [
-            SystemMessage(content=system_message_review),
-            HumanMessage(content=""),
+            SystemMessage(content=SYSTEM_REVIEW_ARCHITECT_PROMPT),
+            HumanMessage(content=human_message_review),
         ]
     )
-    is_pass = review_reply.grade
-    feedback = review_reply.feedback
+    is_pass = review_reply.grade_architect
+    feedback = review_reply.feedback_architect
     return {"grade_architect": is_pass, "feedback_architect": feedback}
 
 
@@ -112,6 +123,20 @@ def route_architect(state: ArchitectState):
     return state["grade_architect"]
 
 
+# async def query_module(module):
+#     query = f"please find information how to achieve the following description in {module.name}: {module.description}"
+#     return await RAG.invoke({"question": query})  # Run in a separate thread
+def query_module(task):
+    """同步查询每个模块的信息"""
+    query = f"please find information how to achieve the following description in {task}"
+    results = []
+    # 使用同步调用
+    for event in RAG.stream({"question": query}):
+        for value in event.values():
+            results.append(value)
+    return results[-1] if results else None  # 返回最后一个结果
+
+
 def generate_inpcard(state: WriterState, config: RunnableConfig):
     """Generate the inpcard based on the architect's design.
 
@@ -122,12 +147,20 @@ def generate_inpcard(state: WriterState, config: RunnableConfig):
     Returns:
         dict: A dictionary containing the generated inpcard details.
     """
-    modules = state["modules"]
-    overall_architect = modules.overall_architect
-    modules_description = tran_list_to_str(modules.modules_description)
+    retrieve_tasks = state["retrieve_tasks"]
+
+    docs = []
+    conbine = ""
+    for task in retrieve_tasks:
+        result = query_module(task)
+        conbine += f"The task is: {task}\nThe result is: {result}\n\n"
+        if result is not None:
+            docs.append(result)
     feedback = state["feedback_inpcard"] if state.get("feedback_inpcard") else ""
-    system_message_inpcard = SYSTEM_INPCARD_PROMPT.format(
-        overall_architect=overall_architect, modules=modules_description, feedback=feedback
+    human_message_inpcard = HUMAN_WRITER_PROMPT.format(
+        structured_requirements=state["structured_requirements"],
+        documentation=state["documentation"],
+        feedback=feedback,
     )
 
     # Get configuration
@@ -135,11 +168,11 @@ def generate_inpcard(state: WriterState, config: RunnableConfig):
     generator = load_chat_model(configuration.generate_model).with_structured_output(InpcardState)
     inpcard_reply = generator.invoke(
         [
-            SystemMessage(content=system_message_inpcard),
-            HumanMessage(content=""),
+            SystemMessage(content=SYSTEM_WRITER_PROMPT),
+            HumanMessage(content=human_message_inpcard),
         ]
     )
-    return {"inpcard": inpcard_reply}
+    return {"inpcard": inpcard_reply, "documentation": docs}
 
 
 def review_inpcard(state: WriterState, config: RunnableConfig):
@@ -153,20 +186,19 @@ def review_inpcard(state: WriterState, config: RunnableConfig):
         dict: A dictionary containing the review results.
     """
     inpcard_details = state["inpcard"]
-    modules = state["modules"]
-    overall_architect = modules.overall_architect
-    modules_description = tran_list_to_str(modules.modules_description)
-    system_message_review = SYSTEM_REVIEW2_PROMPT.format(
-        inpcard=inpcard_details, overall_architect=overall_architect, modules=modules_description
+    human_message_review = HUMAN_REVIEW_WRITER_PROMPT.format(
+        structured_requirements=state["structured_requirements"],
+        documentation=state["documentation"],
+        inpcard=inpcard_details.inpcard,
     )
 
     # Get configuration
     configuration = Configuration.from_runnable_config(config)
-    review2 = load_chat_model(configuration.review2_model).with_structured_output(ReviewState)
-    review_reply = review2.invoke(
+    review_writer = load_chat_model(configuration.review_writer_model).with_structured_output(ReviewWriterState)
+    review_reply = review_writer.invoke(
         [
-            SystemMessage(content=system_message_review),
-            HumanMessage(content=""),
+            SystemMessage(content=SYSTEM_REVIEW_WRITER_PROMPT),
+            HumanMessage(content=human_message_review),
         ]
     )
     is_pass = review_reply.grade
@@ -234,11 +266,14 @@ architect_builder.add_conditional_edges(
 )
 architect_builder.add_edge("save_inpcard", "run_moose")
 architect_builder.add_edge("run_moose", END)
-graph = architect_builder.compile()
+memory = MemorySaver()
+graph = architect_builder.compile(checkpointer=memory)
 if __name__ == "__main__":
+    sys.path.append("E:/vscode/python/Agent/langgraph_learning/mooseagent/src")
+    config = {"configurable": {"thread_id": "1"}}
 
     def stream_graph_updates(user_input: str):
-        for event in graph.stream({"topic": user_input}):
+        for event in graph.stream({"requirement": user_input}, config=config):
             for value in event.values():
                 print(value)
 
@@ -249,4 +284,6 @@ if __name__ == "__main__":
     Source Term: The volume heat generation rate in the fuel pellet is set as a cosine distribution along the axial direction and is uniform in the radial direction; The power is 0 at the top and bottom, and reaches a maximum of 2×10⁷ kW/m³ at the center.
     Material Properties: Fuel Pellet Thermal Conductivity: 1/(11.8+0.0238*T) + 8.775*1e-13*T^3 W/(cm·°C), Fuel Pellet Thermal Expansion Coefficient: Isotropic, with the formula: 7.107e-6+5.16e-9*T+3.42e-13*T^2(°C^(-1)); Cladding Thermal Conductivity: 0.15W/(cm·°C); Cladding Thermal Expansion Coefficient: 5.5e-6(°C^(-1)). In all formulas, T represents temperature in °C.
     """
+
+    # 运行异步主程序
     stream_graph_updates(topic)
