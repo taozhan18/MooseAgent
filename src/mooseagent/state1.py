@@ -17,11 +17,12 @@ class FlowState(TypedDict):
 
     requirement: str
     detailed_description: str
-    similar_case: str
+    similar_cases: str
     inpcard: InpcardState
     grade: Literal["pass", "fail"]
     feedback: str
     dp_json: dict[str, str]
+    run_result: str
 
 
 class AlignmentState(BaseModel):
@@ -30,7 +31,7 @@ class AlignmentState(BaseModel):
 
 class InpcardState(BaseModel):
     name: str = Field(
-        description="The file name of the input card.",
+        description="The file name of the input card. Use previous input card name if it exists.",
     )
     overall_description: str = Field(
         description="Overall description of the input card.",

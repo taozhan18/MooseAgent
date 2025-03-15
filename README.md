@@ -1,3 +1,24 @@
+# Algorithm
+输入（仿真需求）
+  需求对齐：划分仿真任务，确定每个子文件的名字，对每个仿真任务内的细节进行说明。（每个输入卡变量名要一致）
+  For inpcard in inpcards:
+      架构师：指定Mesh，变量，辅助变量，kernel，Bc, 后处理。（每个模块定义的变量名要一致）
+      For subtask in tasks
+        RAG，写
+  整体检查哪一个文件哪一个模块有问题，
+  执行
+  RAG：
+  需求对齐那里要RAG一下，案例检索
+  架构师那里重新检索，基于检索的cases来拆分任务
+  对每一个子任务，再次重新检索，还要检索dp文件，用agent判断和挑选有用信息，加一个while循环确定用的都是已有的app。
+  数据库：
+  Agents：对齐、架构、写、RAG，审
+  1.comment.json，
+  2.dp.json，所有description要重新写
+1.dp.json
+2.需求对齐prompt重新写
+3.
+
 # LangGraph ReAct Agent Template
 
 [![CI](https://github.com/langchain-ai/react-agent/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/langchain-ai/react-agent/actions/workflows/unit-tests.yml)

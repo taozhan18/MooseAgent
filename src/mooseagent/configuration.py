@@ -41,15 +41,18 @@ class WriterProvider(Enum):
 class Configuration:
     """The configurable fields for the chatbot."""
 
-    # alignment_model: str = "openai/gpt-4o-mini"
-    # review_writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-7-sonnet-latest
-    # writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-5-sonnet-latest
-    alignment_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"
-    review_writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-7-sonnet-latest
-    writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-5-sonnet-latest
+    alignment_model: str = "openai/gpt-4o"
+    review_writer_model: str = "openai/gpt-4o"  # Defaults to claude-3-7-sonnet-latest
+    writer_model: str = "openai/gpt-4o"  # Defaults to claude-3-5-sonnet-latest
+    # alignment_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"
+    # review_writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-7-sonnet-latest
+    # writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-5-sonnet-latest
     embedding_function: str = "OPENAI"  # "BGE_M3_EmbeddingFunction"  # Defaults to BGE_M3_EmbeddingFunction
 
-    ABSOLUTE_PATH = "E:/vscode/python/Agent/langgraph_learning/mooseagent/src"
+    # DIR
+    ABSOLUTE_PATH: str = "/home/zt/workspace/MooseAgent/src"
+    MOOSE_DIR: str = "/home/zt/workspace/mymoose/mymoose-opt"
+    save_dir: str = "/home/zt/workspace/MooseAgent/run_path"
     docs_dir: str = os.path.join(ABSOLUTE_PATH, "database")
     DATABASE_NAME: str = "*.md"
     TEMPERATURE: float = 0.1
@@ -66,6 +69,9 @@ class Configuration:
     comment_rag_model: str = "openai/gpt-4o-mini"
     comment_writer_model: str = "openai/gpt-4o-mini"
     dp_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "dp.json")
+
+    # run
+    mpi = 1
 
     @classmethod
     def from_runnable_config(cls, config: Optional[RunnableConfig] = None) -> "Configuration":

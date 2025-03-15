@@ -1,0 +1,3 @@
+One-Dimensional Steady-State Heat Conduction
+Task Description:
+A metallic rod of length L = 1 m has its two ends kept at constant temperatures of 300 K and 350 K, respectively. The thermal conductivity (k) is 10 W/(m·K). Under steady-state conditions, compute the temperature distribution along the rod and output the temperature profile as a function of position.

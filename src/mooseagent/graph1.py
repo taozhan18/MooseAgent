@@ -7,12 +7,13 @@ import json
 import sys
 import os
 from dotenv import load_dotenv
+import subprocess
 
 load_dotenv()
 from langgraph.checkpoint.memory import MemorySaver
 
 # sys.path.append("../")
-sys.path.append(r"E:/vscode/python/Agent/langgraph_learning/mooseagent/src")
+sys.path.append(r"/home/zt/workspace/MooseAgent/src")
 from tqdm import tqdm
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -99,14 +100,14 @@ def rag_info(state: FlowState, config: RunnableConfig):
     system_message_rag = SYSTEM_RAG_PROMPT.format(requirement=state["detailed_description"])
     # rag_agent = load_chat_model(configuration.rag_model, temperature=0.0)  # .with_structured_output(RAGState)
     # rag_agent = rag_agent.bind_tools(tools)
-    similar_case = retriever.invoke(state["detailed_description"])
+    similar_cases = retriever.invoke(state["detailed_description"])
     # [
     #         SystemMessage(content=system_message_rag),
     #         HumanMessage(content=state["requirement"]),
     #     ]
     # )
     print(f"---RETRIEVE DONE---")
-    return {"similar_case": similar_case}
+    return {"similar_cases": similar_cases}
 
 
 def generate_inpcard(state: FlowState, config: RunnableConfig):
@@ -120,14 +121,16 @@ def generate_inpcard(state: FlowState, config: RunnableConfig):
         dict: A dictionary containing the generated inpcard details.
     """
     print(f"---GENERATE INPCARD---")
-    similar_cases = state["similar_case"]
+    similar_cases = state["similar_cases"]
     similar_cases_strs = tran_dicts_to_str(similar_cases)
 
     detailed_description = state["detailed_description"]
-    feedback = state["feedback_inpcard"] if state.get("feedback_inpcard") else ""
+    feedback = state["feedback"] if state.get("feedback") else ""
+    previous_inpcard = state["inpcard"].inpcard if state.get("inpcard") else ""
     human_message_inpcard = HUMAN_WRITER_PROMPT.format(
         overall_description=detailed_description,
         similar_case=similar_cases_strs,
+        previous_inpcard=previous_inpcard,
         feedback=feedback,
     )
 
@@ -143,11 +146,11 @@ def generate_inpcard(state: FlowState, config: RunnableConfig):
     print(f"---GENERATE INPCARD DONE---")
 
     """Save the generated inpcard to a file."""
-    with open(inpcard_reply.name, "w", encoding="utf-8") as f:
+    with open(os.path.join(configuration.save_dir, inpcard_reply.name), "w", encoding="utf-8") as f:
         f.write(inpcard_reply.inpcard)
     print(f"Inpcard saved to {inpcard_reply.name}")
 
-    return {"inpcard": inpcard_reply}
+    return {"inpcard": inpcard_reply, "run_result": ""}
 
 
 def review_inpcard(state: FlowState, config: RunnableConfig):
@@ -179,11 +182,13 @@ def review_inpcard(state: FlowState, config: RunnableConfig):
             rag_info += f"# Here is the documentation of {app}\n"
             rag_info += doc
             rag_info += "\n\n"
-
+    similar_cases_strs = tran_dicts_to_str(state["similar_cases"])
     human_message_review = HUMAN_REVIEW_WRITER_PROMPT.format(
         overall_description=state["detailed_description"],
         inpcard=inpcard_content,
+        similar_case=similar_cases_strs,
         documentation=rag_info,
+        run_result=state["run_result"],
     )
 
     # Get configuration
@@ -215,18 +220,51 @@ def route_inpcard(state: FlowState):
     return state["grade"]
 
 
-def save_inpcard(state: FlowState):
+def run_inpcard(state: FlowState, config: RunnableConfig):
+    configuration = Configuration.from_runnable_config(config)
     """Save the generated inpcard to a file."""
     inpcard = state["inpcard"]
-    with open(inpcard.name, "w", encoding="utf-8") as f:
+    with open(os.path.join(configuration.save_dir, inpcard.name), "w", encoding="utf-8") as f:
         f.write(inpcard.inpcard)
     print(f"Inpcard saved to {inpcard.name}")
-
-
-def run_moose(state: FlowState):
     """Run the moose simulation."""
-    inpcard = state["inpcard"]
-    print(f"Running moose with {inpcard.name}")
+    if os.path.exists(os.path.join(configuration.MOOSE_DIR)):
+        print(f"Running moose with {inpcard.name}")
+        command = [
+            "mpiexec",
+            "-n",
+            str(configuration.mpi),
+            configuration.MOOSE_DIR,
+            "-i",
+            os.path.join(configuration.save_dir, inpcard.name),
+        ]
+        result = subprocess.run(command, capture_output=True, text=True)
+        # 打印输出
+        if result.stderr == "":
+            print("SUCCESS:")
+            print(result.stdout)
+            return {"run_result": "success"}
+        else:
+            print("ERROR:")
+            print(result.stderr)
+            return {"run_result": result.stderr}
+    else:
+        print(f"Moose directory {configuration.MOOSE_DIR} does not exist.")
+        return {"run_result": "success"}
+
+
+def route_run_inpcard(state: FlowState):
+    """Determine the next node based on the model's output.
+
+    This function checks if the model's last message contains tool calls.
+
+    Args:
+        state (State): The current state of the conversation.
+    """
+    if state["run_result"] == "success":
+        return "success"
+    else:
+        return "fail"
 
 
 # Build workflow
@@ -237,8 +275,7 @@ architect_builder.add_node("align_simulation_description", align_simulation_desc
 architect_builder.add_node("rag_info", rag_info)
 architect_builder.add_node("generate_inpcard", generate_inpcard)
 architect_builder.add_node("review_inpcard", review_inpcard)
-architect_builder.add_node("save_inpcard", save_inpcard)
-architect_builder.add_node("run_moose", run_moose)
+architect_builder.add_node("run_inpcard", run_inpcard)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_edge("align_simulation_description", "rag_info")
@@ -248,18 +285,24 @@ architect_builder.add_conditional_edges(
     "review_inpcard",
     route_inpcard,
     {  # Name returned by route_joke : Name of next node to visit
-        "pass": "save_inpcard",
+        "pass": "run_inpcard",
         "fail": "generate_inpcard",
     },
 )
-architect_builder.add_edge("save_inpcard", "run_moose")
-architect_builder.add_edge("run_moose", END)
+architect_builder.add_conditional_edges(
+    "run_inpcard",
+    route_run_inpcard,
+    {  # Name returned by route_joke : Name of next node to visit
+        "success": END,
+        "fail": "review_inpcard",
+    },
+)
 memory = MemorySaver()
 graph = architect_builder.compile(checkpointer=memory)
 if __name__ == "__main__":
-    sys.path.append("E:/vscode/python/Agent/langgraph_learning/mooseagent/src")
+    sys.path.append("/home/zt/workspace/MooseAgent/src/")
     config = {"configurable": {"thread_id": "1"}}
-    dp_json_path = "E:/vscode/python/Agent/langgraph_learning/mooseagent/src/database/dp.json"
+    dp_json_path = "/home/zt/workspace/MooseAgent/src/database/dp.json"
     with open(dp_json_path, "r", encoding="utf-8") as file:
         dp_json = json.load(file)
 
@@ -269,11 +312,7 @@ if __name__ == "__main__":
                 print(value)
 
     topic = """
-    Perform steady-state thermomechanical calculations for a Pressurized Water Reactor (PWR) fuel rod. The setup is as follows:
-    Geometric Conditions: The fuel pellet is made of UO₂ ceramic with a diameter of 8.192 mm; The cladding is made of Zr4 alloy with an inner diameter of 8.36 mm, an outer diameter of 9.5 mm, and a height of 3657 mm. So there is a gap between the fuel pellet and the cladding, they inter. Do 2D RZ simulation.
-    Boundary Conditions: Adiabatic boundary conditions are applied at the top and bottom; The right side is set as an isothermal boundary condition, with an inlet temperature of 293 K and an outlet temperature of 333 K. The temperature in between is linearly interpolated; The gap between the fuel pellet and the cladding is set with an internal pressure of 2 MPa.
-    Source Term: The volume heat generation rate in the fuel pellet is set as a cosine distribution along the axial direction and is uniform in the radial direction; The power is 0 at the top and bottom, and reaches a maximum of 2×10⁷ kW/m³ at the center.
-    Material Properties: Fuel Pellet Thermal Conductivity: 1/(11.8+0.0238*T) + 8.775*1e-13*T^3 W/(cm·°C), Fuel Pellet Thermal Expansion Coefficient: Isotropic, with the formula: 7.107e-6+5.16e-9*T+3.42e-13*T^2(°C^(-1)); Cladding Thermal Conductivity: 0.15W/(cm·°C); Cladding Thermal Expansion Coefficient: 5.5e-6(°C^(-1)). In all formulas, T represents temperature in °C.
+    A rectangular plate (2 m × 1 m) is fixed along the left edge and subjected to a uniform tensile stress of 5 MPa on the right edge. The material is linear elastic with Young’s modulus E = 200 GPa and Poisson’s ratio ν = 0.3. The goal is to compute the stress and strain fields in the plate and output the maximum principal stress and strain.
     """
 
     # 运行异步主程序
