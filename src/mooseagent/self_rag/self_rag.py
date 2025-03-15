@@ -14,11 +14,16 @@ from langchain.prompts import PromptTemplate
 from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader
+from tqdm import tqdm
 from mooseagent.configuration import Configuration
+from mooseagent.utils import BGE_M3_EmbeddingFunction
+from langchain_openai import OpenAIEmbeddings
 from langchain_core.runnables import RunnableConfig
 
 config = RunnableConfig()
 configuration = Configuration.from_runnable_config(config)
+embedding_function = OpenAIEmbeddings() if configuration.embedding_function == "OPENAI" else BGE_M3_EmbeddingFunction()
+batch_size = configuration.batch_size
 
 
 def load_and_split_markdown_docs(docs_dir: str) -> list:
@@ -41,20 +46,30 @@ def create_vector_store(docs_dir: str) -> Chroma:
         print("加载已存在的向量库...")
         # 直接加载持久化的向量库
         vectorstore = Chroma(
-            persist_directory=PERSIST_DIRECTORY, collection_name="rag-chroma", embedding_function=OpenAIEmbeddings()
+            persist_directory=PERSIST_DIRECTORY,
+            collection_name="rag-chroma",
+            embedding_function=embedding_function,
         )
     else:
         print("首次运行，加载文档并创建向量库...")
         # 加载并切分文档
+        print("加载并切分文档...")
         split_docs = load_and_split_markdown_docs(docs_dir)
-
-        # 创建向量库并持久化
-        vectorstore = Chroma.from_documents(
-            documents=split_docs,
-            collection_name="rag-chroma",
-            embedding=OpenAIEmbeddings(),
-            persist_directory=PERSIST_DIRECTORY,
-        )
+        print("创建向量库...")
+        for i in tqdm(range(0, len(split_docs), batch_size)):
+            if i == 0:
+                # 创建向量库并持久化
+                vectorstore = Chroma.from_documents(
+                    documents=split_docs[i : i + batch_size],
+                    collection_name="rag-chroma",
+                    embedding=embedding_function,
+                    persist_directory=PERSIST_DIRECTORY,
+                )
+            else:
+                # 添加文档到向量库
+                vectorstore.add_documents(
+                    documents=split_docs[i : i + batch_size],
+                )
         # 持久化向量库
         vectorstore.persist()
     return vectorstore.as_retriever()
@@ -70,7 +85,7 @@ class GradeDocuments(BaseModel):
 
 
 ### Retriever grader
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
 structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
 # Prompt
@@ -108,7 +123,7 @@ legal_chat_qa_prompt_template = """"
 prompt = PromptTemplate.from_template(legal_chat_qa_prompt_template)
 
 # LLM
-llm = ChatOpenAI(model_name="gpt-4o", temperature=0)
+llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.1)
 
 
 # Post-processing
@@ -129,7 +144,7 @@ class GradeHallucinations(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.1)
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
 # Prompt
@@ -154,7 +169,7 @@ class GradeAnswer(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.1)
 structured_llm_grader = llm.with_structured_output(GradeAnswer)
 
 # Prompt
@@ -171,7 +186,7 @@ answer_grader = answer_prompt | structured_llm_grader
 
 ### Question Re-writer
 # LLM
-llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.1)
 # Prompt
 system = """You a question re-writer that converts an input question to a better version that is optimized \n
      for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""

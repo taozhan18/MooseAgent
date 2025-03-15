@@ -2,7 +2,6 @@ import os
 from enum import Enum
 from dataclasses import dataclass, fields
 from typing import Any, Optional, Dict
-
 from langchain_core.runnables import RunnableConfig
 
 DEFAULT_REPORT_STRUCTURE = """Use this structure to create input card for the FEM software moose on the user-provided topic:
@@ -42,24 +41,31 @@ class WriterProvider(Enum):
 class Configuration:
     """The configurable fields for the chatbot."""
 
-    report_structure: str = DEFAULT_REPORT_STRUCTURE  # Defaults to the default report structure
-    number_of_queries: int = 2  # Number of search queries to generate per iteration
-    max_search_depth: int = 2  # Maximum number of reflection + search iterations
-    planner_provider: PlannerProvider = PlannerProvider.ANTHROPIC  # Defaults to Anthropic as provider
-    architect_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-7-sonnet-latest
-    generate_model: str = "openai/gpt-4o-mini"  # Defaults to openai/gpt-4o-mini
-    review_architect_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-7-sonnet-latest
-    review_writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-7-sonnet-latest
-    writer_provider: WriterProvider = WriterProvider.ANTHROPIC  # Defaults to Anthropic as provider
-    writer_model: str = "claude-3-5-sonnet-latest"  # Defaults to claude-3-5-sonnet-latest
-    search_api: SearchAPI = SearchAPI.TAVILY  # Default to TAVILY
-    search_api_config: Optional[Dict[str, Any]] = None
+    # alignment_model: str = "openai/gpt-4o-mini"
+    # review_writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-7-sonnet-latest
+    # writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-5-sonnet-latest
+    alignment_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"
+    review_writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-7-sonnet-latest
+    writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-5-sonnet-latest
+    embedding_function: str = "OPENAI"  # "BGE_M3_EmbeddingFunction"  # Defaults to BGE_M3_EmbeddingFunction
 
     ABSOLUTE_PATH = "E:/vscode/python/Agent/langgraph_learning/mooseagent/src"
     docs_dir: str = os.path.join(ABSOLUTE_PATH, "database")
-    PERSIST_DIRECTORY: str = os.path.join(ABSOLUTE_PATH, "database", "chromadb")
     DATABASE_NAME: str = "*.md"
     TEMPERATURE: float = 0.1
+
+    # RAG
+    top_k: int = 6
+    rag_model: str = "openai/gpt-4o-mini"
+    rag_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "comment.json")
+    batch_size: int = 1  # batch size for adding documents to the vector store
+    PERSIST_DIRECTORY: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + "_faiss")
+
+    # AUTO COMMENT
+    use_llm_rag: bool = False
+    comment_rag_model: str = "openai/gpt-4o-mini"
+    comment_writer_model: str = "openai/gpt-4o-mini"
+    dp_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "dp.json")
 
     @classmethod
     def from_runnable_config(cls, config: Optional[RunnableConfig] = None) -> "Configuration":

@@ -4,10 +4,16 @@ Works with a chat model with tool calling support.
 """
 
 import sys
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.checkpoint.memory import MemorySaver
 
-sys.path.append("../")
+# sys.path.append("../")
+sys.path.append(r"E:/vscode/python/Agent/langgraph_learning/mooseagent/src")
 from datetime import datetime, timezone
 from typing import Dict, List, Literal, cast
 
@@ -40,9 +46,7 @@ from mooseagent.prompts import (
     HUMAN_REVIEW_WRITER_PROMPT,
     HUMAN_REPORT_PROMPT,
 )
-from dotenv import load_dotenv
 
-load_dotenv()
 # Define the function that calls the model
 
 

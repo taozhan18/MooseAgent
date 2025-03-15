@@ -19,7 +19,7 @@ Please perform the following tasks:
    - Executioner: time step, time step type, solver type, preconditioner, etc.
    - ...  (other settings that are necessary for computation).
 
-3. Based on the structured requirements, formulate specific knowledge retrieval sub-tasks (clearly list them). The example of retrieval requirements is as follows: Function created by parsing a expression string; Riemann boundary conditions with a function; How to add a body force item in equation?
+3. Develop specific knowledge retrieval subtasks based on structured requirements (clearly listed). Please note that MOOSE documentation only describes general functionalities, usage instructions, parameters, and capabilities of the application (APP). Ensure that the search is easy to find. For example: Function created by parsing a expression string; Riemann boundary conditions with a function; How to add a body force item in equation?
 """
 
 SYSTEM_WRITER_PROMPT = """You are the Input File Generation Agent for MOOSE, responsible for creating accurate and high-quality MOOSE input files based on the structured simulation requirements, relevant information from MOOSE documentation and Feedback.
@@ -213,7 +213,9 @@ Here is feedback from reviewer (if any):
 Please generate a complete MOOSE input file that meets the requirements, strictly adhering to MOOSE input file standards. It should include clear annotations in the input file to explain the significance and source of key parameters.
 """
 
-SYSTEM_REVIEW_ARCHITECT_PROMPT = """You are the chief engineer to understand the simulation task in FEM software. Your role is to meticulously review the structured simulation requirements and the associated knowledge retrieval tasks formulated by the Task Manager Agent, ensuring they are accurate, comprehensive, and effectively aligned with the user's original simulation request.
+SYSTEM_REVIEW_ARCHITECT_PROMPT = """You are the chief engineer to understand the simulation task in FEM software. Your role is to meticulously review the structured simulation requirements and the associated knowledge retrieval tasks formulated by the Task Manager Agent, ensuring they are accurate, comprehensive, and effectively aligned with the user's original simulation request. Beside, ensuring whether the knowledge need to retrieve can be easily found in MOOSE documentation.
+Note that:
+1. MOOSE documentation only describes general functionalities, usage instructions, parameters, and capabilities of the application (APP).
 """
 
 HUMAN_REVIEW_ARCHITECT_PROMPT = """
@@ -228,7 +230,7 @@ The knowledge need to retrieve formulated by the Task Manager Agent are:
 
 Please undertake the following review tasks:
 1. Determine one by one whether there are any issues with the structured simulation requirements and whether they meet the user's requirements.
-2. Determine if the knowledge need to retrieve are comprehensive, specific and relevant to the simulation requirements, if there are another knowledge need to retrieve, please supplement them.
+2. Determine if the knowledge need to retrieve are comprehensive, specific, and if the description can be found. If there are another knowledge need to retrieve, please supplement them.
 
 You should reply "pass" or "fail",  if "fail", please provide feedback.
 """

@@ -1,71 +1,87 @@
-# Pressurized Water Reactor (PWR) Fuel Rod Steady-State Thermomechanical Simulation
+# Steady-State Thermomechanical Calculations of a PWR Fuel Rod
+# This input card simulates the thermal and mechanical behavior of a PWR fuel rod under operational conditions.
 
 [Mesh]
-# Define the mesh for the fuel rod geometry, including the fuel pellet and cladding.
-# Fuel pellet diameter = 8.192 mm, Cladding inner diameter = 8.36 mm,
-# Cladding outer diameter = 9.5 mm, Height = 3657 mm.
-# A cylindrical mesh is used with finer resolution in the radial direction.
-mesh_type = cylindrical
-mesh_size = 0.1 # Adjust as necessary for finer resolution
-fuel_pellet_diameter = 8.192 mm
-cladding_inner_diameter = 8.36 mm
-cladding_outer_diameter = 9.5 mm
-rod_height = 3657 mm
+  [./geom]
+    type = GeneratedMeshGenerator  # Specifies the type of mesh generator to use.
+    dim = 3  # The dimension of the mesh, in this case, it is a 3D mesh.
+    nx = 20  # Number of elements in the x-direction (radial direction).
+    ny = 20  # Number of elements in the y-direction (axial direction).
+    nz = 20  # Number of elements in the z-direction (circumferential direction).
+  [../]
+[]
 
 [Variables]
-# Define dependent variables for simulation.
-# Temperature (T), thermal stress, and thermal strain.
-[ScalarField]
-variables = T
+  [./T]
+    order = FIRST  # Specifies the order of the variable, FIRST indicates linear approximation for temperature.
+  [../]
+  [./stress]
+    order = FIRST  # Specifies the order of the variable, FIRST indicates linear approximation for stress.
+  [../]
+[]
 
-[Global]
-# Thermal stress and strain will be derived from the temperature field.
-thermal_stress = compute_stress(T)
-thermal_strain = compute_strain(T)
+[Problem]
+  coord_type = RZ  # Specifies the coordinate system used for the problem, RZ indicates cylindrical coordinates (radius and z).
+[]
+
+[Functions]
+  [./heat_generation]
+    type = ParsedFunction  # Specifies the type of function, here it is a parsed function that can evaluate expressions.
+    symbol_names = 'H'  # Names of the symbols used in the expression.
+    symbol_values = '1.0'  # Values corresponding to the symbols defined above.
+    expression = 'H * cos(pi * z / L)'  # The cosine heat generation distribution along the height of the rod.
+  [../]
+[]
 
 [Kernels]
-# Kernels include heat conduction equation and mechanical response to thermal expansion.
-[HeatConduction]
-# Using temperature-dependent thermal conductivity for the fuel pellet and cladding.
-conductivity = function(T) # Define as needed
+  [./heat_conduction]
+    type = HeatConduction  # Specifies the kernel type for heat conduction problems.
+    variable = T  # The variable that this kernel operates on, in this case, the temperature T.
+  [../]
+  [./stress_calculation]
+    type = TotalLagrangianStressDivergenceCentrosymmetricSpherical  # Kernel for stress calculations in spherical coordinates.
+    variable = stress  # The variable this kernel operates on, in this case, the stress.
+  [../]
+[]
 
-[MechanicalResponse]
-# Incorporate thermal expansion coefficients for both materials.
-thermal_expansion_coefficient_fuel = 1.2e-5
-thermal_expansion_coefficient_cladding = 1.0e-5
+[BCs]
+  [./adiabatic_top]
+    type = NeumannBC  # Specifies a Neumann boundary condition for adiabatic conditions.
+    variable = T  # The variable this boundary condition applies to, which is the temperature T.
+    boundary = top  # The boundary where this condition applies, here it is the top boundary.
+    value = 0  # No heat transfer at the top boundary.
+  [../]
+  [./adiabatic_bottom]
+    type = NeumannBC  # Specifies a Neumann boundary condition for adiabatic conditions.
+    variable = T  # The variable this boundary condition applies to, which is the temperature T.
+    boundary = bottom  # The boundary where this condition applies, here it is the bottom boundary.
+    value = 0  # No heat transfer at the bottom boundary.
+  [../]
+  [./isothermal_right]
+    type = DirichletBC  # Specifies a Dirichlet boundary condition for isothermal conditions.
+    variable = T  # The variable this boundary condition applies to, which is the temperature T.
+    boundary = right  # The boundary where this condition applies, here it is the right boundary.
+    value = 293  # The temperature at the right boundary.
+  [../]
+[]
 
-# Define heat generation term with cosine distribution along the axial direction.
-heat_generation = cos_distribution(z, amplitude = 1.0) 
-
-[BC]
-# Define boundary conditions for the simulation.
-# Adiabatic boundary conditions at the top and bottom of the fuel rod.
-[BC_Adiabatic]
-location = top
-heat_flux = 0.0
-
-[BC_Adiabatic]
-location = bottom
-heat_flux = 0.0
-
-# Fixed temperature conditions on the right side, interpolating between inlet and outlet temperature.
-[BC_Temperature]
-location = right_side
-T_inlet = 293 K
-T_outlet = 333 K
-
-# Define internal pressure boundary condition in the gap between fuel pellet and cladding.
-[BC_Pressure]
-pressure = 2 MPa
+[Materials]
+  [./fuel_material]
+    type = GenericConstantMaterial  # Specifies a material with constant properties for the fuel pellet.
+    prop_names = 'thermal_conductivity thermal_expansion'  # Names of the material properties defined.
+    prop_values = 'k(T) 7.107e-6'  # Values corresponding to the material properties: thermal conductivity and thermal expansion coefficient.
+  [../]
+  [./cladding_material]
+    type = GenericConstantMaterial  # Specifies a material with constant properties for the cladding.
+    prop_names = 'thermal_conductivity thermal_expansion'  # Names of the material properties defined.
+    prop_values = '0.15 5.5e-6'  # Values corresponding to the material properties: thermal conductivity and thermal expansion coefficient.
+  [../]
+[]
 
 [Executioner]
-# Specify execution parameters for the steady-state solver.
-solver_type = steady_state
-max_iterations = 100
-convergence_criteria = 1e-6
+  type = Steady  # Specifies the type of executioner for steady-state simulations.
+[]
 
 [Outputs]
-# Define output parameters for simulation results.
-# Output temperature distribution, stress distribution, and other relevant fields.
-output_fields = T, thermal_stress, thermal_strain
-output_format = VTK
+  csv = true  # Specifies that the output should be in CSV format.
+[]
