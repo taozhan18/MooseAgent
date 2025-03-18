@@ -16,6 +16,7 @@ class FlowState(TypedDict):
     """Defines the architect of input card of moose state for the agent."""
 
     requirement: str
+    file_list: dict[str, str]  # key is the file name, value is the detailed description
     detailed_description: str
     similar_cases: str
     inpcard: InpcardState
@@ -25,8 +26,37 @@ class FlowState(TypedDict):
     run_result: str
 
 
-class AlignmentState(BaseModel):
-    detailed_description: str = Field(description="Provide a complete simulation description here")
+class FileState(BaseModel):
+    file_name: str = Field(description="The file name of the input card.")
+    description: str = Field(description="The detailed description of this file.")
+
+
+class ExtracterFileState(BaseModel):
+    file_list: list[FileState] = Field(description="A list of file name and its detailed description.")
+
+
+class SubtaskState(BaseModel):
+    name: str = Field(description="The name of the sub-task.")
+    retrieve: bool = Field(description="Whether to retrieve information from the database.")
+    description: str = Field(description="The detailed description of the sub-task.")
+
+
+class ExtracterSubtaskState(BaseModel):
+    sub_tasks: list[SubtaskState] = Field(
+        description="A list of sub-tasks with name, retrieve value, and detailed description."
+    )
+
+
+class OneFileState(TypedDict):
+    name: str
+    description: str
+    sub_tasks: list[str]
+    inpcard: str
+    dp_json: dict[str, str]
+
+
+# class AlignmentState(BaseModel):
+#     detailed_description: str = Field(description="Provide a complete simulation description here")
 
 
 class InpcardState(BaseModel):

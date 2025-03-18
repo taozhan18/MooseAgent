@@ -41,9 +41,11 @@ class WriterProvider(Enum):
 class Configuration:
     """The configurable fields for the chatbot."""
 
-    alignment_model: str = "openai/gpt-4o"
-    review_writer_model: str = "openai/gpt-4o"  # Defaults to claude-3-7-sonnet-latest
-    writer_model: str = "openai/gpt-4o"  # Defaults to claude-3-5-sonnet-latest
+    alignment_model: str = "openai/gpt-4o-mini"
+    architect_model: str = "openai/gpt-4o-mini"
+    review_writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-7-sonnet-latest
+    writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-5-sonnet-latest
+    extracter_model: str = "openai/gpt-4o-mini"
     # alignment_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"
     # review_writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-7-sonnet-latest
     # writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-5-sonnet-latest
@@ -58,11 +60,13 @@ class Configuration:
     TEMPERATURE: float = 0.1
 
     # RAG
-    top_k: int = 6
+    top_k: int = 3
     rag_model: str = "openai/gpt-4o-mini"
-    rag_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "comment.json")
+    rag_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "dp_detail.json")
     batch_size: int = 1  # batch size for adding documents to the vector store
-    PERSIST_DIRECTORY: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + "_faiss")
+    PERSIST_DIRECTORY: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + "_faiss_dp")
+    dp_database_path: str = os.path.join(ABSOLUTE_PATH, "database", "OPENAI_faiss_dp")
+    input_database_path: str = os.path.join(ABSOLUTE_PATH, "database", "OPENAI_faiss_inpcard")
 
     # AUTO COMMENT
     use_llm_rag: bool = False

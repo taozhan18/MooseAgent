@@ -3,6 +3,7 @@
 Works with a chat model with tool calling support.
 """
 
+import asyncio
 import json
 import sys
 import os
@@ -23,17 +24,36 @@ from langchain.tools.retriever import create_retriever_tool
 from langchain_community.vectorstores import Chroma, FAISS
 from mooseagent.configuration import Configuration
 from langchain_openai import OpenAIEmbeddings
-from mooseagent.utils import BGE_M3_EmbeddingFunction, tran_dicts_to_str
-from mooseagent.state1 import FlowState, AlignmentState, RAGState, ReviewWriterState, InpcardState
+from mooseagent.utils import (
+    BGE_M3_EmbeddingFunction,
+    tran_dicts_to_str,
+    extract_files_and_descriptions,
+    extract_sub_tasks,
+)
+from mooseagent.state1 import (
+    FlowState,
+    RAGState,
+    ReviewWriterState,
+    InpcardState,
+    OneFileState,
+    ExtracterFileState,
+    ExtracterSubtaskState,
+    SubtaskState,
+)
 from mooseagent.utils import load_chat_model
 from mooseagent.prompts1 import (
+    SYSTEM_ALIGNMENT_PROMPT,
+    HUMAN_ALIGNMENT_PROMPT,
     SYSTEM_WRITER_PROMPT,
     SYSTEM_REVIEW_WRITER_PROMPT,
     HUMAN_WRITER_PROMPT,
     HUMAN_REVIEW_WRITER_PROMPT,
-    ALIGNMENT_PROMPT,
     SYSTEM_RAG_PROMPT,
+    SYSTEM_ARCHITECT_PROMPT,
+    HUMAN_ARCHITECT_PROMPT,
 )
+from mooseagent.write_module import bulid_writer_module
+from langgraph.constants import Send
 
 config = RunnableConfig()
 configuration = Configuration.from_runnable_config(config)
@@ -42,18 +62,32 @@ batch_size = configuration.batch_size
 top_k = configuration.top_k
 json_file = configuration.rag_json_path
 try:
-    vectordb = FAISS.load_local(
-        configuration.PERSIST_DIRECTORY, embedding_function, allow_dangerous_deserialization=True
+    vectordb_input = FAISS.load_local(
+        configuration.input_database_path, embedding_function, allow_dangerous_deserialization=True
     )
-    retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
+    retriever_input = vectordb_input.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
+    vectordb_dp = FAISS.load_local(
+        configuration.dp_database_path, embedding_function, allow_dangerous_deserialization=True
+    )
+    retriever_dp = vectordb_dp.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
 except Exception as e:
     print(f"Error loading vector database: {e}")
     sys.exit(1)
-retriever_tool = create_retriever_tool(
-    retriever,
-    "retrieve_moose_case",
-    "Find MOOSE simulation cases that are similar to the input case.",
+RAG_input = bulid_writer_module(
+    retriever_input,
+    "find_similar_MOOSE_input_card",
+    "find similar MOOSE simulation input card in the database with a lot of MOOSE simulation cases.",
 )
+RAG_dp = bulid_writer_module(
+    retriever_dp,
+    "find_relevant_MOOSE_documentation",
+    "find relevant application's documentation of moose in all the moose application documentation database",
+)
+# retriever_tool = create_retriever_tool(
+#     retriever,
+#     "retrieve_moose_case",
+#     "Find MOOSE simulation cases that are similar to the input case.",
+# )
 # tools = [retriever_tool]
 
 
@@ -67,90 +101,190 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
     """
 
     configuration = Configuration.from_runnable_config(config)
-    alignment = load_chat_model(configuration.alignment_model).with_structured_output(AlignmentState)
+    alignment = load_chat_model(configuration.alignment_model)
+    # similar_cases = retriever.invoke(state["detailed_description"])
     feedback = ""
     while feedback != "yes":
-        system_message_alignment = ALIGNMENT_PROMPT.format(requirement=state["requirement"], feedback=feedback)
+        human_message_alignment = HUMAN_ALIGNMENT_PROMPT.format(requirement=state["requirement"], feedback=feedback)
         alignment_reply = alignment.invoke(
             [
-                SystemMessage(content=system_message_alignment),
+                SystemMessage(content=SYSTEM_ALIGNMENT_PROMPT),
+                HumanMessage(content=human_message_alignment),
             ]
         )
-        print(alignment_reply.detailed_description)
+        print(alignment_reply.content)
         feedback = input(
-            "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\n"
+            "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
         )
-    print("---The final simulation task is:---")
-    print(alignment_reply.detailed_description)
+    # file_list = extract_files_and_descriptions(alignment_reply.content)  # 提取文件名和描述
+    # print("---The final simulation task is:---")
+    # print(alignment_reply.detailed_description)
+    extracter_file = load_chat_model(configuration.extracter_model).with_structured_output(ExtracterFileState)
+    extracter_reply = extracter_file.invoke(
+        [
+            SystemMessage(
+                content="You are a helpful assistant that can extract a list of file name and its detailed description from the text. You should never change the file name and its detailed description."
+            ),
+            HumanMessage(content=alignment_reply.content),
+        ]
+    )
     print("---Now I will generate the architect of the input card and conduct the simulation.---")
-    return {"detailed_description": alignment_reply.detailed_description}
+    return {"file_list": extracter_reply.file_list}
+    # Kick off section writing in parallel via Send() API for any sections that do not require research
 
 
-def rag_info(state: FlowState, config: RunnableConfig):
-    """RAG the information of the simulation task
+def route_align(state: FlowState):
+    return [
+        Send(
+            "architect_input_card",
+            {
+                "description": file.description,
+                "file_name": file.file_name,
+                "dp_json": state["dp_json"],
+            },
+        )
+        for file in state["file_list"]
+    ]
+
+
+def architect_input_card(state: OneFileState, config: RunnableConfig):
+    """Generate the architect of the input card
     Args:
-        state (FlowState): The current state of the conversation.
+        state (OneFileState): The current state of the conversation.
         config (RunnableConfig): Configuration for the model run.
     Returns:
         dict: A dictionary containing the model's response
     """
     configuration = Configuration.from_runnable_config(config)
-    print(f"---RETRIEVE---")
-    # similar_case = retriever.invoke(state["overall_description"])
-    system_message_rag = SYSTEM_RAG_PROMPT.format(requirement=state["detailed_description"])
-    # rag_agent = load_chat_model(configuration.rag_model, temperature=0.0)  # .with_structured_output(RAGState)
-    # rag_agent = rag_agent.bind_tools(tools)
-    similar_cases = retriever.invoke(state["detailed_description"])
-    # [
-    #         SystemMessage(content=system_message_rag),
-    #         HumanMessage(content=state["requirement"]),
-    #     ]
-    # )
-    print(f"---RETRIEVE DONE---")
-    return {"similar_cases": similar_cases}
-
-
-def generate_inpcard(state: FlowState, config: RunnableConfig):
-    """Generate the inpcard based on the architect's design.
-
-    Args:
-        state (ArchitectState): The current state of the conversation.
-        config (RunnableConfig): Configuration for the model run.
-
-    Returns:
-        dict: A dictionary containing the generated inpcard details.
-    """
-    print(f"---GENERATE INPCARD---")
-    similar_cases = state["similar_cases"]
-    similar_cases_strs = tran_dicts_to_str(similar_cases)
-
-    detailed_description = state["detailed_description"]
-    feedback = state["feedback"] if state.get("feedback") else ""
-    previous_inpcard = state["inpcard"].inpcard if state.get("inpcard") else ""
-    human_message_inpcard = HUMAN_WRITER_PROMPT.format(
-        overall_description=detailed_description,
-        similar_case=similar_cases_strs,
-        previous_inpcard=previous_inpcard,
-        feedback=feedback,
-    )
-
-    # Get configuration
-    configuration = Configuration.from_runnable_config(config)
-    generator = load_chat_model(configuration.writer_model).with_structured_output(InpcardState)
-    inpcard_reply = generator.invoke(
+    print(f"---ARCHITECT INPUT CARD---")
+    similar_cases = retriever_input.invoke(state["description"])
+    human_message_architect = HUMAN_ARCHITECT_PROMPT.format(requirement=state["description"], examples=similar_cases)
+    architect = load_chat_model(configuration.architect_model)
+    architect_reply = architect.invoke(
         [
-            SystemMessage(content=SYSTEM_WRITER_PROMPT),
-            HumanMessage(content=human_message_inpcard),
+            SystemMessage(content=SYSTEM_ARCHITECT_PROMPT),
+            HumanMessage(content=human_message_architect),
         ]
     )
-    print(f"---GENERATE INPCARD DONE---")
+    extracter_subtask = load_chat_model(configuration.extracter_model).with_structured_output(ExtracterSubtaskState)
+    extracter_reply = extracter_subtask.invoke(
+        [
+            SystemMessage(
+                content="You are a helpful assistant that can extract a list of sub-tasks from the text. Each sub-task has a name, a retrieve value, and a detailed description. You should never change the sub-task name, retrieve value, and detailed description."
+            ),
+            HumanMessage(content=architect_reply.content),
+        ]
+    )
+    print(architect_reply.content)
+    sub_tasks = extracter_reply.sub_tasks
+    return {"sub_tasks": sub_tasks}
 
-    """Save the generated inpcard to a file."""
-    with open(os.path.join(configuration.save_dir, inpcard_reply.name), "w", encoding="utf-8") as f:
-        f.write(inpcard_reply.inpcard)
-    print(f"Inpcard saved to {inpcard_reply.name}")
 
-    return {"inpcard": inpcard_reply, "run_result": ""}
+def check_app(inpcard: str, dp_json: dict):
+    """Check the application of the inpcard.
+    Args:
+        inpcard (str): The inpcard to check.
+    Returns:
+        dict: A dictionary containing the application of the inpcard.
+    """
+    # 检查inpcard中是否存在app
+    # find the documentation of the app used in the input card
+    app_list = []
+    lines = inpcard.splitlines()
+    for line in lines:
+        line = line.replace(" type=", " type =")
+        if " type =" in line:
+            # 提取app名称，假设格式为 type = <appname>
+            app_name = line.split(" type =")[-1].strip().split()[0]
+            app_list.append(app_name)
+    feedback = ""
+    for app in app_list:
+        doc = dp_json.get(app)
+        if doc is None:
+            feedback += f"{app} is not found in the documentation, please change another application.\n"
+    return feedback
+
+
+def write_module(module: SubtaskState, dp_json: dict):
+    """Write the module of the input card
+    Args:
+        module (str): The module to write.
+    Returns:
+        dict: A dictionary containing the model's response
+    """
+    module_name = module.name
+    retrieve = module.retrieve
+    module_description = module.description
+    configuration = Configuration.from_runnable_config(config)
+    writer = load_chat_model(configuration.writer_model)
+    print(f"---WRITE MODULE---")
+    if retrieve:
+        print(f"---FIND SIMILAR MOOSE INPUT CARD---")
+        RAG_input_messages = RAG_input.invoke({"question": module_description})
+        similar_cases = RAG_input_messages["final_result"]
+        print(f"---FIND RELATED MOOSE DOCUMENTATION---")
+        RAG_dp_messages = RAG_dp.invoke({"question": module_description})
+        similar_dp = RAG_dp_messages["final_result"]
+    else:
+        similar_cases = ""
+        similar_dp = ""
+    feedback = ""
+    while True:
+        human_message_write = HUMAN_WRITER_PROMPT.format(
+            module_name=module_name,
+            requirement=module_description,
+            similar_cases=similar_cases,
+            similar_dp=similar_dp,
+            feedback=feedback,
+        )
+
+        write_reply = writer.invoke(
+            [
+                SystemMessage(content=SYSTEM_WRITER_PROMPT),
+                HumanMessage(content=human_message_write),
+            ]
+        )
+        feedback = check_app(write_reply.content, dp_json)
+        if feedback == "":
+            break
+    print(f"---WRITE MODULE DONE---")
+    return write_reply.content
+
+
+# async def write_input_card(state: OneFileState, config: RunnableConfig):
+#     """Generate the subtask of the input card
+#     Args:
+#         state (OneFileState): The current state of the conversation.
+#         config (RunnableConfig): Configuration for the model run.
+#     Returns:
+#         dict: A dictionary containing the model's response
+#     """
+#     configuration = Configuration.from_runnable_config(config)
+#     print(f"---WRITE INPUT CARD---")
+#     tasks = [write_module(module, state["dp_json"]) for module in state["sub_tasks"]]
+#     inpcards = await asyncio.gather(*tasks)
+#     inpcard_str = "\n".join([inpcard["inpcard"] for inpcard in inpcards])
+#     print(f"---WRITE INPUT CARD DONE---")
+#     return {"inpcard": inpcard_str}
+
+
+def write_input_card(state: OneFileState, config: RunnableConfig):
+    """Generate the subtask of the input card
+    Args:
+        state (OneFileState): The current state of the conversation.
+        config (RunnableConfig): Configuration for the model run.
+    Returns:
+        dict: A dictionary containing the model's response
+    """
+    configuration = Configuration.from_runnable_config(config)
+    print(f"---WRITE INPUT CARD---")
+    codes = []
+    for task in state["sub_tasks"]:
+        code = write_module(task, state["dp_json"])
+        codes.append(code)
+    inpcard_str = "\n".join(codes)
+    print(f"---WRITE INPUT CARD DONE---")
+    return {"inpcard": inpcard_str}
 
 
 def review_inpcard(state: FlowState, config: RunnableConfig):
@@ -272,21 +406,21 @@ architect_builder = StateGraph(FlowState)  # v, input=ArchitectInputState, outpu
 
 # Add the nodes
 architect_builder.add_node("align_simulation_description", align_simulation_description)
-architect_builder.add_node("rag_info", rag_info)
-architect_builder.add_node("generate_inpcard", generate_inpcard)
+architect_builder.add_node("architect_input_card", architect_input_card)
+architect_builder.add_node("write_input_card", write_input_card)
 architect_builder.add_node("review_inpcard", review_inpcard)
 architect_builder.add_node("run_inpcard", run_inpcard)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
-architect_builder.add_edge("align_simulation_description", "rag_info")
-architect_builder.add_edge("rag_info", "generate_inpcard")
-architect_builder.add_edge("generate_inpcard", "review_inpcard")
+architect_builder.add_conditional_edges("align_simulation_description", route_align, ["architect_input_card"])
+architect_builder.add_edge("architect_input_card", "write_input_card")
+architect_builder.add_edge("write_input_card", "review_inpcard")
 architect_builder.add_conditional_edges(
     "review_inpcard",
     route_inpcard,
     {  # Name returned by route_joke : Name of next node to visit
         "pass": "run_inpcard",
-        "fail": "generate_inpcard",
+        "fail": END,
     },
 )
 architect_builder.add_conditional_edges(
@@ -316,5 +450,6 @@ if __name__ == "__main__":
     """
 
     # 运行异步主程序
+    # asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))
     # graph.invoke({"requirement": topic, "dp_json": dp_json}, config=config)
     stream_graph_updates(topic, dp_json)

@@ -6,7 +6,7 @@ load_dotenv()
 from langgraph.checkpoint.memory import MemorySaver
 
 # sys.path.append("../")
-sys.path.append(r"E:/vscode/python/Agent/langgraph_learning/mooseagent/src")
+sys.path.append(r"/home/zt/workspace/MooseAgent/src")
 from langchain_community.vectorstores import FAISS
 from mooseagent.configuration import Configuration
 from langchain_community.document_loaders import JSONLoader
