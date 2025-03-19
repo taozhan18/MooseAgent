@@ -69,23 +69,9 @@ def bulid_writer_module(retriever, description="", document_prompt=""):
         Returns:
             dict: The updated state with the agent response appended to messages
         """
-        print("---CALL AGENT---")
-        question = state["question"]
-        msg = [
-            HumanMessage(
-                content=f"""Look at the input and try to reason about the underlying semantic intent / meaning. \n
-                Here is the initial question:
-                \n ------- \n
-                {question}
-                \n ------- \n
-                Propose an improvement question to make it easily retrievable.""",
-            )
-        ]
-        model = ChatOpenAI(temperature=0, streaming=True, model=model_str)
-        rewrite_question = model.invoke(msg)
-        rag_info = retriever.invoke(rewrite_question.content)
+        rag_info = retriever.invoke(state["question"])
         # We return a list, because this will get added to the existing list
-        return {"rewrite_question": rewrite_question.content, "docs": rag_info}
+        return {"docs": rag_info}
 
     def generate(state: AgentState):
         """

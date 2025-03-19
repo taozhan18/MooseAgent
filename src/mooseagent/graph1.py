@@ -37,7 +37,7 @@ from mooseagent.state1 import (
     InpcardState,
     OneFileState,
     ExtracterFileState,
-    ExtracterSubtaskState,
+    ExtracterArchitectState,
     SubtaskState,
 )
 from mooseagent.utils import load_chat_model
@@ -50,7 +50,7 @@ from mooseagent.prompts1 import (
     HUMAN_REVIEW_WRITER_PROMPT,
     SYSTEM_RAG_PROMPT,
     SYSTEM_ARCHITECT_PROMPT,
-    HUMAN_ARCHITECT_PROMPT,
+    # HUMAN_ARCHITECT_PROMPT,
 )
 from mooseagent.write_module import bulid_writer_module
 from langgraph.constants import Send
@@ -134,6 +134,7 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
 
 
 def route_align(state: FlowState):
+    # DSAD
     return [
         Send(
             "architect_input_card",
@@ -156,28 +157,31 @@ def architect_input_card(state: OneFileState, config: RunnableConfig):
         dict: A dictionary containing the model's response
     """
     configuration = Configuration.from_runnable_config(config)
-    print(f"---ARCHITECT INPUT CARD---")
+    print(f"---ARCHITECT INPUT CARD---")  #
     similar_cases = retriever_input.invoke(state["description"])
-    human_message_architect = HUMAN_ARCHITECT_PROMPT.format(requirement=state["description"], examples=similar_cases)
+    # human_message_architect = HUMAN_ARCHITECT_PROMPT.format(requirement=state["description"], examples=similar_cases)
     architect = load_chat_model(configuration.architect_model)
     architect_reply = architect.invoke(
         [
-            SystemMessage(content=SYSTEM_ARCHITECT_PROMPT),
-            HumanMessage(content=human_message_architect),
+            SystemMessage(
+                content=SYSTEM_ARCHITECT_PROMPT.format(requirements=state["description"], cases=similar_cases)
+            ),
+            # HumanMessage(content=human_message_architect),
         ]
     )
-    extracter_subtask = load_chat_model(configuration.extracter_model).with_structured_output(ExtracterSubtaskState)
+    extracter_subtask = load_chat_model(configuration.extracter_model).with_structured_output(ExtracterArchitectState)
     extracter_reply = extracter_subtask.invoke(
         [
             SystemMessage(
-                content="You are a helpful assistant that can extract a list of sub-tasks from the text. Each sub-task has a name, a retrieve value, and a detailed description. You should never change the sub-task name, retrieve value, and detailed description."
+                content="You are a helpful assistant that can extract the MOOSE input card template and a list of ontent that needs to be retrieved from the text. You should never change the origin information."
             ),
             HumanMessage(content=architect_reply.content),
         ]
     )
     print(architect_reply.content)
-    sub_tasks = extracter_reply.sub_tasks
-    return {"sub_tasks": sub_tasks}
+    input_card_template = extracter_reply.code_template
+    retrieved_content = extracter_reply.retrieve_content
+    return {"inpcard_template": input_card_template, "retrieved_content": retrieved_content}
 
 
 def check_app(inpcard: str, dp_json: dict):
@@ -205,67 +209,30 @@ def check_app(inpcard: str, dp_json: dict):
     return feedback
 
 
-def write_module(module: SubtaskState, dp_json: dict):
-    """Write the module of the input card
+def RAG_document(content: str):
+    RAG_input_messages = RAG_input.invoke({"question": content})
+    similar_cases = RAG_input_messages["final_result"]
+    print(f"---FIND RELATED MOOSE DOCUMENTATION---")
+    RAG_dp_messages = RAG_dp.invoke({"question": content})
+    similar_dp = RAG_dp_messages["final_result"]
+    return f"Here in some relevent information for this question: {content}.\n{similar_cases}\n{similar_dp}\n"
+
+
+async def RAGS(state: OneFileState, config: RunnableConfig):
+    """Generate the subtask of the input card
     Args:
-        module (str): The module to write.
+        state (OneFileState): The current state of the conversation.
+        config (RunnableConfig): Configuration for the model run.
     Returns:
         dict: A dictionary containing the model's response
     """
-    module_name = module.name
-    retrieve = module.retrieve
-    module_description = module.description
     configuration = Configuration.from_runnable_config(config)
-    writer = load_chat_model(configuration.writer_model)
-    print(f"---WRITE MODULE---")
-    if retrieve:
-        print(f"---FIND SIMILAR MOOSE INPUT CARD---")
-        RAG_input_messages = RAG_input.invoke({"question": module_description})
-        similar_cases = RAG_input_messages["final_result"]
-        print(f"---FIND RELATED MOOSE DOCUMENTATION---")
-        RAG_dp_messages = RAG_dp.invoke({"question": module_description})
-        similar_dp = RAG_dp_messages["final_result"]
-    else:
-        similar_cases = ""
-        similar_dp = ""
-    feedback = ""
-    while True:
-        human_message_write = HUMAN_WRITER_PROMPT.format(
-            module_name=module_name,
-            requirement=module_description,
-            similar_cases=similar_cases,
-            similar_dp=similar_dp,
-            feedback=feedback,
-        )
-
-        write_reply = writer.invoke(
-            [
-                SystemMessage(content=SYSTEM_WRITER_PROMPT),
-                HumanMessage(content=human_message_write),
-            ]
-        )
-        feedback = check_app(write_reply.content, dp_json)
-        if feedback == "":
-            break
-    print(f"---WRITE MODULE DONE---")
-    return write_reply.content
-
-
-# async def write_input_card(state: OneFileState, config: RunnableConfig):
-#     """Generate the subtask of the input card
-#     Args:
-#         state (OneFileState): The current state of the conversation.
-#         config (RunnableConfig): Configuration for the model run.
-#     Returns:
-#         dict: A dictionary containing the model's response
-#     """
-#     configuration = Configuration.from_runnable_config(config)
-#     print(f"---WRITE INPUT CARD---")
-#     tasks = [write_module(module, state["dp_json"]) for module in state["sub_tasks"]]
-#     inpcards = await asyncio.gather(*tasks)
-#     inpcard_str = "\n".join([inpcard["inpcard"] for inpcard in inpcards])
-#     print(f"---WRITE INPUT CARD DONE---")
-#     return {"inpcard": inpcard_str}
+    print(f"---RAG---")
+    tasks = [RAG_document(content) for content in state["retrieved_content"]]
+    documents = await asyncio.gather(*tasks)
+    documents_str = "\n".join([document for document in documents])
+    print(f"---END RAG---")
+    return {"documents": documents_str}
 
 
 def write_input_card(state: OneFileState, config: RunnableConfig):
@@ -278,13 +245,28 @@ def write_input_card(state: OneFileState, config: RunnableConfig):
     """
     configuration = Configuration.from_runnable_config(config)
     print(f"---WRITE INPUT CARD---")
-    codes = []
-    for task in state["sub_tasks"]:
-        code = write_module(task, state["dp_json"])
-        codes.append(code)
-    inpcard_str = "\n".join(codes)
+    writer = load_chat_model(configuration.writer_model)
+    feedback = ""
+    while True:
+        writer_reply = writer.invoke(
+            [
+                SystemMessage(
+                    content=SYSTEM_ARCHITECT_PROMPT.format(
+                        requirement=state["description"],
+                        input_card_template=state["inpcard_template"],
+                        uncertainty=["retrieved_content"],
+                        documents=state["documents"],
+                        feedback=state["feedback"],
+                    )
+                ),
+                # HumanMessage(content=human_message_architect),
+            ]
+        )
+        feedback = check_app(writer_reply.content, state["dp_json"])
+        if feedback == "":
+            break
     print(f"---WRITE INPUT CARD DONE---")
-    return {"inpcard": inpcard_str}
+    return {"inpcard": writer_reply.content}
 
 
 def review_inpcard(state: FlowState, config: RunnableConfig):
@@ -408,12 +390,14 @@ architect_builder = StateGraph(FlowState)  # v, input=ArchitectInputState, outpu
 architect_builder.add_node("align_simulation_description", align_simulation_description)
 architect_builder.add_node("architect_input_card", architect_input_card)
 architect_builder.add_node("write_input_card", write_input_card)
+architect_builder.add_node("RAGS", RAGS)
 architect_builder.add_node("review_inpcard", review_inpcard)
 architect_builder.add_node("run_inpcard", run_inpcard)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_conditional_edges("align_simulation_description", route_align, ["architect_input_card"])
-architect_builder.add_edge("architect_input_card", "write_input_card")
+architect_builder.add_edge("architect_input_card", "RAGS")
+architect_builder.add_edge("RAGS", "write_input_card")
 architect_builder.add_edge("write_input_card", "review_inpcard")
 architect_builder.add_conditional_edges(
     "review_inpcard",
@@ -450,6 +434,6 @@ if __name__ == "__main__":
     """
 
     # 运行异步主程序
-    # asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))
+    asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))
     # graph.invoke({"requirement": topic, "dp_json": dp_json}, config=config)
-    stream_graph_updates(topic, dp_json)
+    # stream_graph_updates(topic, dp_json)

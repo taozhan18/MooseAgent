@@ -20,6 +20,7 @@ class FlowState(TypedDict):
     detailed_description: str
     similar_cases: str
     inpcard: InpcardState
+    documents = str
     grade: Literal["pass", "fail"]
     feedback: str
     dp_json: dict[str, str]
@@ -41,17 +42,21 @@ class SubtaskState(BaseModel):
     description: str = Field(description="The detailed description of the sub-task.")
 
 
-class ExtracterSubtaskState(BaseModel):
-    sub_tasks: list[SubtaskState] = Field(
-        description="A list of sub-tasks with name, retrieve value, and detailed description."
+class ExtracterArchitectState(BaseModel):
+    code_template: str = Field(description="The proposed MOOSE input card template here")
+    retrieve_content: list[str] = Field(
+        description="List the content that needs to be retrieved in unclear areas here."
     )
 
 
 class OneFileState(TypedDict):
     name: str
     description: str
-    sub_tasks: list[str]
+    inpcard_template: str
+    retrieved_content: list[str]
     inpcard: str
+    documents: str
+    feedback: str
     dp_json: dict[str, str]
 
 
