@@ -10,6 +10,7 @@ import requests
 import os
 import ast
 from langchain_openai import ChatOpenAI
+from langchain_deepseek import ChatDeepSeek
 
 # from langchain_core.embeddings import Embeddings
 from langchain.embeddings.base import Embeddings
@@ -27,7 +28,7 @@ def get_message_text(msg: BaseMessage) -> str:
         return "".join(txts).strip()
 
 
-def load_chat_model(fully_specified_name: str, temperature: float = 0.1) -> BaseChatModel:
+def load_chat_model(fully_specified_name: str, temperature: float = 0.01) -> BaseChatModel:
     """Load a chat model from a fully specified name.
 
     Args:
@@ -37,14 +38,25 @@ def load_chat_model(fully_specified_name: str, temperature: float = 0.1) -> Base
     if provider == "siliconflow":
         try:
             llm = ChatOpenAI(
-                model_name=model,  # 或者换成你对应的模型
+                model=model,  # 或者换成你对应的模型
                 temperature=temperature,
-                base_url=os.getenv("SILICONFLOW_BASE"),
+                base_url=os.getenv("SILICONFLOW_API_BASE"),
                 api_key=os.getenv("SILICONFLOW_API_KEY"),
             )
             return llm
         except Exception as e:
             raise ValueError(f"SILICONFLOW_API_KEY 错误，请检查 .env 文件。{e}")
+    elif provider == "huoshan":
+        try:
+            llm = ChatDeepSeek(
+                model=model,  # 或者换成你对应的模型
+                temperature=temperature,
+                api_base=os.getenv("HUOSHAN_API_BASE"),
+                api_key=os.getenv("HUOSHAN_API_KEY"),
+            )
+            return llm
+        except Exception as e:
+            raise ValueError(f"HUOSHAN_API_KEY 错误，请检查 .env 文件。{e}")
     else:
         return init_chat_model(model, model_provider=provider, temperature=temperature)
 
@@ -201,3 +213,28 @@ class BGE_M3_EmbeddingFunction(Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         return self.embed_documents([text])[0]
+
+
+def check_app(inpcard: str, dp_json: dict):
+    """Check the application of the inpcard.
+    Args:
+        inpcard (str): The inpcard to check.
+    Returns:
+        dict: A dictionary containing the application of the inpcard.
+    """
+    # 检查inpcard中是否存在app
+    # find the documentation of the app used in the input card
+    app_list = []
+    lines = inpcard.splitlines()
+    for line in lines:
+        line = line.replace(" type=", " type =")
+        if " type =" in line:
+            # 提取app名称，假设格式为 type = <appname>
+            app_name = line.split(" type =")[-1].strip().split()[0]
+            app_list.append(app_name)
+    feedback = ""
+    for app in app_list:
+        doc = dp_json.get(app)
+        if doc is None:
+            feedback += f"type = {app} is not found in the documentation, please change another application.\n"
+    return feedback

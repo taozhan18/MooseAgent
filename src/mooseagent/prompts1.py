@@ -26,27 +26,18 @@ File_name: Write the file name.
 Description: Write the detailed description of the file.
 """
 
-SYSTEM_ARCHITECT_PROMPT = """You need to draft a template for MOOSE input cards. Usually, MOOSE input cards include the following modules: Mesh,Variables,Kernels,BCs,Executioner,Outputs. Besides, there are some optional modules: GlobalParams,Materials,AuxVariables,AuxKernels,ICs,Transfers,Functions,MultiApps,Preconditioning,Executioners,Transfers, etc. For modules that you consider to have high uncertainty, please describe the functions that the module needs to complete in natural language. At the same time, provide relevant information to search for applications in MOOSE that can complete this function. Please note that 'uncertain' refers to not knowing what application to use in MOOSE to implement simulation requirements, rather than setting up simulation tasks. Be careful not to create applications that do not exist in MOOSE.
-Firstly, please carefully read the following simulation task requirements for MOOSE:
+SYSTEM_ARCHITECT_PROMPT = """Please create a MOOSE input file structure based on the user's requirements and output an input file with detailed comments. Typically, a MOOSE input file consists of the following core modules: Mesh, Variables, Kernels, BCs, Executor, and Outputs. In addition, there are several optional modules available for selection, such as Global Parameters, Materials, Auxiliary Variables, Auxiliary Kernels, Integrated Circuits, Transfers, Functions, MultiApps, Preprocessing, etc. When creating the input file, please avoid introducing modules or applications that do not exist in the MOOSE framework.
+Before starting to create the input file, please carefully read the specific urequirements of the simulation task below:
 <Simulation Task Requirements>
 {requirements}
 </Simulation Task Requirements>
-Next, please carefully review the following MOOSE simulation cases:
-<Simulation Case>
+In addition, to better complete the task, please carefully review the following relevant MOOSE simulation examples, and refer to their content as much as possible:
+<Relevant cases>
 {cases}
-</Simulation Case>
-When drafting the MOOSE input card template, please follow the following rules:
-1. Refer to input cards from existing cases as much as possible.
-2. For the modules that are clearly defined in the requirements and cases, provide corresponding code directly in the template with annotations.
-3. For unclear modules, provide a detailed description of the functionality that the code needs to implement.
-4. When modules are unsure which app in moose to use to complete a task, list the content that needs to be retrieved item by item in order to improve the input card. Merge relevant content as much as possible to reduce the number of retrieves. The retrieved content should describe the functions that the expected app can achieve.
-Please write down the proposed MOOSE input card template in the<Input Card Template>tab, and list the unclear content that needs to be searched in the<Search Content>tab. Ensure that the template content is clear, logically coherent, and the retrieval content is targeted and operable.
-<Input Card Template>
-[Write down the proposed MOOSE input card template here]
-</Input Card Template>
-<Search Content>
-[List the content that needs to be retrieved in unclear areas here]
-</Search Content>
+</Relevant cases>
+"""
+
+SYSTEM_HELPER_PROMPT = """You are a helper for the MOOSE simulation task. Your task is to provide assistance to the user in completing the simulation task. You need to provide detailed and comprehensive information to help the user understand the simulation requirements and complete the simulation task. You should provide deterministic and quantitative descriptions to avoid vague statements.
 """
 
 SYSTEM_RAG_PROMPT = """Your task is to find similar MOOSE simulation cases based on the user's simulation requirement.
@@ -56,33 +47,19 @@ The following are the detailed simulation requirement:
 </simulation_requirement>
 """
 
-SYSTEM_WRITER_PROMPT = """You are an expert in writing MOOSE input cards. Your task is to generate a completed annotated input card based on the given simulation requirements, input card template, and feedback. When there are uncertainties in the input card template, you can refer to the documents that have been retrieved to help answer these uncertainties.
-The following are simulation requirements:
-<simulation_requirements>
-{requirement}
-</simulation_requirements>
-Here is the input card template:
-<input_card_template>
-{input_card_template}
-</input_card_template>
-Here is some uncertainty in this input card (if any):
-<uncertainty>
-{uncertainty}
-</uncertainty>
-The following is a document that can help clarify any uncertainties (if any):
-<helpful_document>
-{documents}
-</helpful_document>
-Here is feedback (if any):
+SYSTEM_WRITER_PROMPT = """You are an expert in writing FEM software MOOSE input cards, responsible for handling input card errors. You need to rewrite the input card based on the existing input card, error information, and feedback information that can help resolve the error.
+Here is the input card:
+<input_card>
+{input_card}
+</input_card>
+Here is error in this input card:
+<error>
+{error}
+</error>
+Here is feedback can help you improve this input card:
 <feedback>
 {feedback}
 </feedback>
-Please follow the steps below to generate a completed annotated input card:
-1. Carefully read the simulation requirements, input card templates, feedback, and documentation.
-2. Improve modules with uncertainty based on retrieved documents.
-3. Add comments to each section of the input card, explaining their purpose and significance.
-4. Check the completed input card to ensure it meets the simulation and feedback requirements.
-You should only need to reply to Moose's input card without any other irrelevant characters.
 """
 
 HUMAN_WRITER_PROMPT = """This is the requirement of moose code for {module_name}:
@@ -104,7 +81,15 @@ You should reply only the code, without any other information. Here is a templat
 []
 """
 
-SYSTEM_REVIEW_WRITER_PROMPT = """You are the Input File Review Agent for MOOSE, tasked with examining the input files generated by the Writer Agent to ensure they are syntactically correct, meet requirements, and are free of omissions and errors. You should always identify errors or issues with a definite tone, provide definite modifications, and avoid ambiguous or vague statements. You should never let the writer agent to ensure it's setting, but just talk him how to modify the input file.
+SYSTEM_REVIEW_WRITER_PROMPT = """You are the Input File Review Agent for MOOSE, responsible for examining the input files generated by the Writer Agent. Your task is to identify the problematic files and specific locations within them based on the MOOSE input files and the error results encountered during execution.
+Please carefully review the following MOOSE input files:
+<moose_input_file>
+{All files}
+</moose_input_file>
+Finally, please analyze the following error results encountered during execution:
+<error_results>
+{Errors}
+</error_results>
 """
 HUMAN_REVIEW_WRITER_PROMPT = """This is the overall description of the simulation:
 {overall_description}

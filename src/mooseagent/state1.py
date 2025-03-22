@@ -16,15 +16,17 @@ class FlowState(TypedDict):
     """Defines the architect of input card of moose state for the agent."""
 
     requirement: str
-    file_list: dict[str, str]  # key is the file name, value is the detailed description
-    detailed_description: str
-    similar_cases: str
-    inpcard: InpcardState
-    documents = str
-    grade: Literal["pass", "fail"]
+    file_list: ExtracterFileState  # key is the file name, value is the detailed description
     feedback: str
     dp_json: dict[str, str]
     run_result: str
+    reviews: ReviewState
+
+
+class OneFileState(TypedDict):
+    inpcard: FileState
+    check: str  # check the file
+    dp_json: dict[str, str]
 
 
 class FileState(BaseModel):
@@ -49,37 +51,33 @@ class ExtracterArchitectState(BaseModel):
     )
 
 
-class OneFileState(TypedDict):
-    name: str
-    description: str
-    inpcard_template: str
-    retrieved_content: list[str]
-    inpcard: str
-    documents: str
-    feedback: str
-    dp_json: dict[str, str]
-
-
 # class AlignmentState(BaseModel):
 #     detailed_description: str = Field(description="Provide a complete simulation description here")
-
-
-class InpcardState(BaseModel):
-    name: str = Field(
-        description="The file name of the input card. Use previous input card name if it exists.",
-    )
-    overall_description: str = Field(
-        description="Overall description of the input card.",
-    )
+class InpcardContentState(BaseModel):
     inpcard: str = Field(
-        description="The input card for MOOSE simulation tasks with annotations.",
+        description="The complete annotated input card of moose without any additional irrelevant explanations or characters."
     )
 
 
-class RAGState(BaseModel):
-    similar_case: list[InpcardState] = Field(
-        description="A list of MOOSE simulation cases.",
+class InpcardState(dict):
+    name: str
+    overall_description: str
+    code: str
+
+
+class ReviewState(BaseModel):
+    files: list[ReviewOneFileState] = Field(
+        description="List of input files with issues, each element in the list stores the name of the file with its error."
     )
+
+
+class ReviewOneFileState(BaseModel):
+    """
+    The output state of the review agent.
+    """
+
+    filename: str = Field(description="The file name of the input card which has error.")
+    error: str = Field(description="Identify the problematic parts in the document.")
 
 
 class ReviewArchitectState(BaseModel):

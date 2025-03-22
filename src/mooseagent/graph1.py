@@ -6,7 +6,7 @@ Works with a chat model with tool calling support.
 import asyncio
 import json
 import sys
-import os
+import os, re
 from dotenv import load_dotenv
 import subprocess
 
@@ -19,76 +19,22 @@ from tqdm import tqdm
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import START, END, StateGraph
-from langgraph.prebuilt import ToolNode
-from langchain.tools.retriever import create_retriever_tool
-from langchain_community.vectorstores import Chroma, FAISS
 from mooseagent.configuration import Configuration
-from langchain_openai import OpenAIEmbeddings
-from mooseagent.utils import (
-    BGE_M3_EmbeddingFunction,
-    tran_dicts_to_str,
-    extract_files_and_descriptions,
-    extract_sub_tasks,
-)
-from mooseagent.state1 import (
-    FlowState,
-    RAGState,
-    ReviewWriterState,
-    InpcardState,
-    OneFileState,
-    ExtracterFileState,
-    ExtracterArchitectState,
-    SubtaskState,
-)
-from mooseagent.utils import load_chat_model
+from mooseagent.state1 import FlowState, ReviewState, OneFileState, ExtracterFileState, InpcardContentState
+from mooseagent.utils import load_chat_model, check_app
 from mooseagent.prompts1 import (
     SYSTEM_ALIGNMENT_PROMPT,
     HUMAN_ALIGNMENT_PROMPT,
-    SYSTEM_WRITER_PROMPT,
     SYSTEM_REVIEW_WRITER_PROMPT,
-    HUMAN_WRITER_PROMPT,
-    HUMAN_REVIEW_WRITER_PROMPT,
-    SYSTEM_RAG_PROMPT,
     SYSTEM_ARCHITECT_PROMPT,
+    SYSTEM_WRITER_PROMPT,
     # HUMAN_ARCHITECT_PROMPT,
 )
-from mooseagent.write_module import bulid_writer_module
+from mooseagent.helper import bulid_helper, retriever_input
 from langgraph.constants import Send
+from langgraph.types import interrupt, Command
 
-config = RunnableConfig()
-configuration = Configuration.from_runnable_config(config)
-embedding_function = OpenAIEmbeddings() if configuration.embedding_function == "OPENAI" else BGE_M3_EmbeddingFunction()
-batch_size = configuration.batch_size
-top_k = configuration.top_k
-json_file = configuration.rag_json_path
-try:
-    vectordb_input = FAISS.load_local(
-        configuration.input_database_path, embedding_function, allow_dangerous_deserialization=True
-    )
-    retriever_input = vectordb_input.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
-    vectordb_dp = FAISS.load_local(
-        configuration.dp_database_path, embedding_function, allow_dangerous_deserialization=True
-    )
-    retriever_dp = vectordb_dp.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
-except Exception as e:
-    print(f"Error loading vector database: {e}")
-    sys.exit(1)
-RAG_input = bulid_writer_module(
-    retriever_input,
-    "find_similar_MOOSE_input_card",
-    "find similar MOOSE simulation input card in the database with a lot of MOOSE simulation cases.",
-)
-RAG_dp = bulid_writer_module(
-    retriever_dp,
-    "find_relevant_MOOSE_documentation",
-    "find relevant application's documentation of moose in all the moose application documentation database",
-)
-# retriever_tool = create_retriever_tool(
-#     retriever,
-#     "retrieve_moose_case",
-#     "Find MOOSE simulation cases that are similar to the input case.",
-# )
-# tools = [retriever_tool]
+helper = bulid_helper()
 
 
 def align_simulation_description(state: FlowState, config: RunnableConfig):
@@ -101,7 +47,7 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
     """
 
     configuration = Configuration.from_runnable_config(config)
-    alignment = load_chat_model(configuration.alignment_model)
+    alignment = load_chat_model(configuration.alignment_model)  # .with_structured_output(ExtracterFileState)
     # similar_cases = retriever.invoke(state["detailed_description"])
     feedback = ""
     while feedback != "yes":
@@ -116,9 +62,6 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
         feedback = input(
             "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
         )
-    # file_list = extract_files_and_descriptions(alignment_reply.content)  # 提取文件名和描述
-    # print("---The final simulation task is:---")
-    # print(alignment_reply.detailed_description)
     extracter_file = load_chat_model(configuration.extracter_model).with_structured_output(ExtracterFileState)
     extracter_reply = extracter_file.invoke(
         [
@@ -130,17 +73,15 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
     )
     print("---Now I will generate the architect of the input card and conduct the simulation.---")
     return {"file_list": extracter_reply.file_list}
-    # Kick off section writing in parallel via Send() API for any sections that do not require research
 
 
-def route_align(state: FlowState):
+def route_align(state: FlowState, config: RunnableConfig):
     # DSAD
     return [
         Send(
             "architect_input_card",
             {
-                "description": file.description,
-                "file_name": file.file_name,
+                "inpcard": file,
                 "dp_json": state["dp_json"],
             },
         )
@@ -156,117 +97,73 @@ def architect_input_card(state: OneFileState, config: RunnableConfig):
     Returns:
         dict: A dictionary containing the model's response
     """
+    inpcard = state["inpcard"]
     configuration = Configuration.from_runnable_config(config)
     print(f"---ARCHITECT INPUT CARD---")  #
-    similar_cases = retriever_input.invoke(state["description"])
-    # human_message_architect = HUMAN_ARCHITECT_PROMPT.format(requirement=state["description"], examples=similar_cases)
-    architect = load_chat_model(configuration.architect_model)
+    similar_cases = retriever_input.invoke(inpcard.description)
+    similar_cases = f"Here is some relevant cases for this question:\n{similar_cases}"
+    architect = load_chat_model(configuration.architect_model).with_structured_output(InpcardContentState)
     architect_reply = architect.invoke(
         [
             SystemMessage(
-                content=SYSTEM_ARCHITECT_PROMPT.format(requirements=state["description"], cases=similar_cases)
+                content=SYSTEM_ARCHITECT_PROMPT.format(
+                    requirements=inpcard.description,
+                    cases=similar_cases,
+                )
             ),
             # HumanMessage(content=human_message_architect),
         ]
     )
-    extracter_subtask = load_chat_model(configuration.extracter_model).with_structured_output(ExtracterArchitectState)
-    extracter_reply = extracter_subtask.invoke(
+    inpcard_code = architect_reply.inpcard
+    with open(os.path.join(configuration.save_dir, inpcard.file_name), "w", encoding="utf-8") as f:
+        f.write(inpcard_code)
+    print(f"---ARCHITECT INPUT CARD DONE---")
+    return state
+
+
+def check_onefile(state: OneFileState, config: RunnableConfig):
+    configuration = Configuration.from_runnable_config(config)
+    inpcard = state["inpcard"]
+    with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
+        inpcard_code = f.read()
+    check = check_app(inpcard_code, state["dp_json"])
+    if check != "":
+        return Command(goto="modify", update={"check": check})
+    else:
+        return Command(goto="run_inpcard")
+
+
+def modify(state: OneFileState, config: RunnableConfig):
+    print(f"---RERITE INPCARD---")
+    inpcard = state["inpcard"]
+    configuration = Configuration.from_runnable_config(config)
+    with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
+        inpcard_code = f.read()
+    print(f"---PRELIMINARY REVIEW INPUT FILE---")  #
+    review_writer = load_chat_model(configuration.review_writer_model).with_structured_output(InpcardContentState)
+
+    messages = {
+        "messages": [
+            {
+                "role": "user",
+                "content": f"Here are some error messages about moose input card: \n{state["check"]}\nThe input card is:\n{inpcard_code}\n",
+            }
+        ]
+    }
+    helper_answer = helper.invoke({"messages": messages})
+    feedback = helper_answer["messages"][-1].content
+    writer_reply = review_writer.invoke(
         [
             SystemMessage(
-                content="You are a helpful assistant that can extract the MOOSE input card template and a list of ontent that needs to be retrieved from the text. You should never change the origin information."
-            ),
-            HumanMessage(content=architect_reply.content),
+                content=SYSTEM_WRITER_PROMPT.format(input_card=inpcard_code, feedback=feedback, error=state["check"])
+            )
         ]
     )
-    print(architect_reply.content)
-    input_card_template = extracter_reply.code_template
-    retrieved_content = extracter_reply.retrieve_content
-    return {"inpcard_template": input_card_template, "retrieved_content": retrieved_content}
-
-
-def check_app(inpcard: str, dp_json: dict):
-    """Check the application of the inpcard.
-    Args:
-        inpcard (str): The inpcard to check.
-    Returns:
-        dict: A dictionary containing the application of the inpcard.
-    """
-    # 检查inpcard中是否存在app
-    # find the documentation of the app used in the input card
-    app_list = []
-    lines = inpcard.splitlines()
-    for line in lines:
-        line = line.replace(" type=", " type =")
-        if " type =" in line:
-            # 提取app名称，假设格式为 type = <appname>
-            app_name = line.split(" type =")[-1].strip().split()[0]
-            app_list.append(app_name)
-    feedback = ""
-    for app in app_list:
-        doc = dp_json.get(app)
-        if doc is None:
-            feedback += f"{app} is not found in the documentation, please change another application.\n"
-    return feedback
-
-
-def RAG_document(content: str):
-    RAG_input_messages = RAG_input.invoke({"question": content})
-    similar_cases = RAG_input_messages["final_result"]
-    print(f"---FIND RELATED MOOSE DOCUMENTATION---")
-    RAG_dp_messages = RAG_dp.invoke({"question": content})
-    similar_dp = RAG_dp_messages["final_result"]
-    return f"Here in some relevent information for this question: {content}.\n{similar_cases}\n{similar_dp}\n"
-
-
-async def RAGS(state: OneFileState, config: RunnableConfig):
-    """Generate the subtask of the input card
-    Args:
-        state (OneFileState): The current state of the conversation.
-        config (RunnableConfig): Configuration for the model run.
-    Returns:
-        dict: A dictionary containing the model's response
-    """
-    configuration = Configuration.from_runnable_config(config)
-    print(f"---RAG---")
-    tasks = [RAG_document(content) for content in state["retrieved_content"]]
-    documents = await asyncio.gather(*tasks)
-    documents_str = "\n".join([document for document in documents])
-    print(f"---END RAG---")
-    return {"documents": documents_str}
-
-
-def write_input_card(state: OneFileState, config: RunnableConfig):
-    """Generate the subtask of the input card
-    Args:
-        state (OneFileState): The current state of the conversation.
-        config (RunnableConfig): Configuration for the model run.
-    Returns:
-        dict: A dictionary containing the model's response
-    """
-    configuration = Configuration.from_runnable_config(config)
-    print(f"---WRITE INPUT CARD---")
-    writer = load_chat_model(configuration.writer_model)
-    feedback = ""
-    while True:
-        writer_reply = writer.invoke(
-            [
-                SystemMessage(
-                    content=SYSTEM_ARCHITECT_PROMPT.format(
-                        requirement=state["description"],
-                        input_card_template=state["inpcard_template"],
-                        uncertainty=["retrieved_content"],
-                        documents=state["documents"],
-                        feedback=state["feedback"],
-                    )
-                ),
-                # HumanMessage(content=human_message_architect),
-            ]
-        )
-        feedback = check_app(writer_reply.content, state["dp_json"])
-        if feedback == "":
-            break
-    print(f"---WRITE INPUT CARD DONE---")
-    return {"inpcard": writer_reply.content}
+    inpcard_code = writer_reply.inpcard
+    with open(os.path.join(configuration.save_dir, inpcard.file_name), "w", encoding="utf-8") as f:
+        f.write(inpcard_code)
+    print(f"---RERITE INPCARD DONE---")
+    return state
 
 
 def review_inpcard(state: FlowState, config: RunnableConfig):
@@ -280,79 +177,59 @@ def review_inpcard(state: FlowState, config: RunnableConfig):
         dict: A dictionary containing the review results.
     """
     print(f"---REVIEW INPCARD---")
-    inpcard = state["inpcard"]
-    inpcard_content = inpcard.inpcard
-    # find the documentation of the app used in the input card
-    app_list = []
-    lines = inpcard_content.splitlines()
-    for line in lines:
-        line = line.replace(" type=", " type =")
-        if " type =" in line:
-            # 提取app名称，假设格式为 type = <appname>
-            app_name = line.split(" type =")[-1].strip().split()[0]
-            app_list.append(app_name)
-    rag_info = ""
-    for app in app_list:
-        doc = state["dp_json"].get(app)
-        if doc is not None:
-            rag_info += f"# Here is the documentation of {app}\n"
-            rag_info += doc
-            rag_info += "\n\n"
-    similar_cases_strs = tran_dicts_to_str(state["similar_cases"])
-    human_message_review = HUMAN_REVIEW_WRITER_PROMPT.format(
-        overall_description=state["detailed_description"],
-        inpcard=inpcard_content,
-        similar_case=similar_cases_strs,
-        documentation=rag_info,
-        run_result=state["run_result"],
-    )
+    all_input_cards = ""
+    for inpcard in state["file_list"]:
+        with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
+            inpcard_code = f.read()
+        all_input_cards += f"-------------------\nThe file name is: {inpcard.file_name}\nThe detailed description of this file is:\n{inpcard.description}\nThe code of this file is: \n{inpcard_code}-------------------\n\n"
+    system_message_review = SYSTEM_REVIEW_WRITER_PROMPT.format(allfiles=all_input_cards, error=state["run_result"])
 
     # Get configuration
     configuration = Configuration.from_runnable_config(config)
-    review_writer = load_chat_model(configuration.review_writer_model).with_structured_output(ReviewWriterState)
+    review_writer = load_chat_model(configuration.review_writer_model).with_structured_output(ReviewState)
     review_reply = review_writer.invoke(
         [
-            SystemMessage(content=SYSTEM_REVIEW_WRITER_PROMPT),
-            HumanMessage(content=human_message_review),
+            SystemMessage(content=system_message_review),
         ]
     )
-    is_pass = review_reply.grade
-    feedback = review_reply.feedback
     print(f"---REVIEW INPCARD DONE---")
-    return {"grade": is_pass, "feedback": feedback}
+    return {"reviews": review_reply.files}
 
 
-def route_inpcard(state: FlowState):
-    """Determine the next node based on the model's output.
-
-    This function checks if the model's last message contains tool calls.
-
-    Args:
-        state (State): The current state of the conversation.
-
-    Returns:
-        str: The name of the next node to call ("__end__" or "tools").
-    """
-    return state["grade"]
+def route_review(state: FlowState):
+    return_content = []
+    for review in state["reviews"]:
+        review_name = review["filename"]
+        error = review["error"]
+        for file in state["file_list"]:
+            if review_name == file.file_name:
+                review_inpcard = file
+                break
+        onefile_state = {
+            "inpcard": review_inpcard,
+            "check": error,
+            "dp_json": state["dp_json"],
+        }
+        return_content.append(Send("modify", onefile_state))
+    return return_content
 
 
 def run_inpcard(state: FlowState, config: RunnableConfig):
     configuration = Configuration.from_runnable_config(config)
     """Save the generated inpcard to a file."""
-    inpcard = state["inpcard"]
-    with open(os.path.join(configuration.save_dir, inpcard.name), "w", encoding="utf-8") as f:
-        f.write(inpcard.inpcard)
-    print(f"Inpcard saved to {inpcard.name}")
+    inpcards = state["file_list"]
+    # ? modify in future
+    exec_name = inpcards[0]["file_name"]
     """Run the moose simulation."""
     if os.path.exists(os.path.join(configuration.MOOSE_DIR)):
-        print(f"Running moose with {inpcard.name}")
+        print(f"Running moose with {exec_name}")
         command = [
             "mpiexec",
             "-n",
             str(configuration.mpi),
             configuration.MOOSE_DIR,
             "-i",
-            os.path.join(configuration.save_dir, inpcard.name),
+            os.path.join(configuration.save_dir, exec_name),
         ]
         result = subprocess.run(command, capture_output=True, text=True)
         # 打印输出
@@ -389,24 +266,15 @@ architect_builder = StateGraph(FlowState)  # v, input=ArchitectInputState, outpu
 # Add the nodes
 architect_builder.add_node("align_simulation_description", align_simulation_description)
 architect_builder.add_node("architect_input_card", architect_input_card)
-architect_builder.add_node("write_input_card", write_input_card)
-architect_builder.add_node("RAGS", RAGS)
+architect_builder.add_node("modify", modify)
+architect_builder.add_node("check_onefile", check_onefile)
 architect_builder.add_node("review_inpcard", review_inpcard)
 architect_builder.add_node("run_inpcard", run_inpcard)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_conditional_edges("align_simulation_description", route_align, ["architect_input_card"])
-architect_builder.add_edge("architect_input_card", "RAGS")
-architect_builder.add_edge("RAGS", "write_input_card")
-architect_builder.add_edge("write_input_card", "review_inpcard")
-architect_builder.add_conditional_edges(
-    "review_inpcard",
-    route_inpcard,
-    {  # Name returned by route_joke : Name of next node to visit
-        "pass": "run_inpcard",
-        "fail": END,
-    },
-)
+architect_builder.add_conditional_edges("architect_input_card", check_onefile)
+architect_builder.add_conditional_edges("modify", check_onefile)
 architect_builder.add_conditional_edges(
     "run_inpcard",
     route_run_inpcard,
@@ -415,6 +283,7 @@ architect_builder.add_conditional_edges(
         "fail": "review_inpcard",
     },
 )
+architect_builder.add_conditional_edges("review_inpcard", route_review, ["modify"])
 memory = MemorySaver()
 graph = architect_builder.compile(checkpointer=memory)
 if __name__ == "__main__":

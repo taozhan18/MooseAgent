@@ -4,47 +4,15 @@ from dataclasses import dataclass, fields
 from typing import Any, Optional, Dict
 from langchain_core.runnables import RunnableConfig
 
-DEFAULT_REPORT_STRUCTURE = """Use this structure to create input card for the FEM software moose on the user-provided topic:
-
-1. Introduction (no research needed)
-   - Brief overview of the topic area
-
-2. Main Body Sections:
-   - Each section should focus on a sub-topic of the user-provided topic
-
-3. Conclusion
-   - Aim for 1 structural element (either a list of table) that distills the main body sections
-   - Provide a concise summary of the report"""
-
-
-class SearchAPI(Enum):
-    PERPLEXITY = "perplexity"
-    TAVILY = "tavily"
-    EXA = "exa"
-    ARXIV = "arxiv"
-    PUBMED = "pubmed"
-
-
-class PlannerProvider(Enum):
-    ANTHROPIC = "anthropic"
-    OPENAI = "openai"
-    GROQ = "groq"
-
-
-class WriterProvider(Enum):
-    ANTHROPIC = "anthropic"
-    OPENAI = "openai"
-    GROQ = "groq"
-
 
 @dataclass(kw_only=True)
 class Configuration:
     """The configurable fields for the chatbot."""
 
-    alignment_model: str = "openai/gpt-4o-mini"
-    architect_model: str = "openai/gpt-4o-mini"
-    review_writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-7-sonnet-latest
-    writer_model: str = "openai/gpt-4o-mini"  # Defaults to claude-3-5-sonnet-latest
+    alignment_model: str = "huoshan/deepseek-v3-241226"
+    architect_model: str = "huoshan/deepseek-r1-250120"
+    review_writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
+    writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-5-sonnet-latest
     extracter_model: str = "openai/gpt-4o-mini"
     # alignment_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"
     # review_writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-7-sonnet-latest
