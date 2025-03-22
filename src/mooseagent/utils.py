@@ -90,16 +90,19 @@ def combine_code_with_description(description: str, code: str) -> str:
     返回:
         str: 合并后的字符串，描述在前，代码在后。
     """
-    # 创建创作者信息
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    creator_info = f"# Created by: MooseAgent\n# Date: {current_date}\n"
-    # 将描述转换为多行注释
-    comment_lines = description.strip().split("\n")
-    comment_block = "\n".join(f"# {line}" for line in comment_lines)
+    if "Created by: MooseAgent" not in code:
+        # 创建创作者信息
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        creator_info = f"# Created by: MooseAgent\n# Date: {current_date}\n"
+        # 将描述转换为多行注释
+        comment_lines = description.strip().split("\n")
+        comment_block = "\n".join(f"# {line}" for line in comment_lines)
 
-    # 合并注释和代码
-    combined_string = f"{creator_info}\n{comment_block}\n\n{code}"
-    return combined_string
+        # 合并注释和代码
+        combined_string = f"{creator_info}\n{comment_block}\n\n{code}"
+        return combined_string
+    else:
+        return code
 
 
 def extract_files_and_descriptions(text):

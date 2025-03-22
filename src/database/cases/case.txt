@@ -1,0 +1,108 @@
+1) One-Dimensional Steady-State Heat Conduction
+Task Description:
+A metallic rod of length L = 1 m has its two ends kept at constant temperatures of 300 K and 350 K, respectively. The thermal conductivity (k) is 10 W/(m·K). Under steady-state conditions, compute the temperature distribution along the rod and output the temperature profile as a function of position.
+
+Key Points to Test:
+- Recognition of a steady-state, 1D conduction problem
+- Correct boundary conditions with fixed temperatures at both ends
+- Proper setup of the governing equation for heat conduction
+
+---
+
+2) Two-Dimensional Plane Elasticity Simulation
+Task Description:
+A rectangular plate (2 m × 1 m) is fixed along the left edge and subjected to a uniform tensile stress of 5 MPa on the right edge. The material is linear elastic with Young’s modulus E = 200 GPa and Poisson’s ratio ν = 0.3. The goal is to compute the stress and strain fields in the plate and output the maximum principal stress and strain.
+
+Key Points to Test:
+- Plane stress (or plane strain) setup
+- Application of a uniform load and proper definition of material properties
+- Correct extraction of principal stress/strain results
+
+---
+
+3) Two-Dimensional Transient Heat Conduction
+Task Description:
+Within a 1 m × 1 m square domain, the initial temperature is 300 K everywhere. The left and bottom boundaries are kept at 300 K, the right boundary at 500 K, and the top boundary is adiabatic. The thermal conductivity (k) is 20 W/(m·K), specific heat capacity cp = 1000 J/(kg·K), and density ρ = 7850 kg/m³. Simulate 50 seconds and output the temperature distribution every 10 seconds.
+
+Key Points to Test:
+- Transient heat conduction setup with time-step control
+- Multiple boundary conditions (isothermal, adiabatic)
+- Proper initialization and temporal evolution of the temperature field
+
+---
+
+4) Three-Dimensional Coupled Convection and Heat Transfer
+Task Description:
+A cubic cavity of side length 1 m is filled with fluid (dynamic viscosity μ = 0.001 Pa·s, density ρ = 1000 kg/m³, thermal conductivity k = 0.6 W/(m·K)). The left wall is maintained at 300 K, the right wall at 400 K, the top and bottom walls are adiabatic, and fluid enters from the bottom with a velocity of 0.01 m/s while exiting freely at the top. Perform a coupled flow and heat transfer simulation until a steady state is reached, then output velocity and temperature fields, as well as the temperature profile at the cavity’s center.
+
+Key Points to Test:
+- 3D flow boundary conditions (inlet, outlet, no-slip walls)
+- Coupled momentum and energy equation
+- Identification of steady-state convergence criteria
+
+---
+
+5) Two-Dimensional Nonlinear Material Mechanics
+Task Description:
+A 1 m × 1 m square plate is fixed on the left edge and subjected to a prescribed horizontal displacement Δx = 0.01 m on the right edge. The material has elastic-plastic behavior with a bilinear hardening model: yield stress σy = 250 MPa, Young’s modulus E = 210 GPa, and hardening modulus H = 1 GPa. Output the final plastic strain distribution and identify the plastic zone.
+
+Key Points to Test:
+- Nonlinear (elastic-plastic) constitutive model
+- Displacement-driven boundary conditions
+- Extraction of plastic strain field
+
+---
+
+6) Three-Dimensional Porous Media Flow
+Task Description:
+A 1 m × 1 m × 1 m cubic block of soil has a water head of 5 m at the bottom and 1 m at the top, with the lateral faces impermeable. The permeability k = 10⁻⁵ m/s. Compute the steady-state flow field and pressure distribution inside the block.
+
+Key Points to Test:
+- Governing equations for porous media flow
+- Water head boundary conditions converted to pressures
+- Handling of impermeable boundary conditions
+
+---
+
+7) Heat Conduction with Phase Change
+Task Description:
+A 0.1 m long metal rod is kept at 300 K on one end and 200 K on the other. The melting/solidification temperature is 250 K, latent heat L = 2×10⁵ J/kg, heat capacity cp is the same for solid and liquid, and thermal conductivity is κs = 30 (solid) and κl = 15 (liquid). Simulate 500 s to track the progression of the phase-change front over time.
+
+Key Points to Test:
+- Inclusion of latent heat effects
+- Temperature-dependent material properties (solid vs. liquid)
+- Transient solution capturing the moving phase boundary
+
+---
+
+8) Stress Analysis of a Composite Laminated Plate
+Task Description:
+A 3-layer composite laminate (each layer 1 mm thick, total thickness 3 mm) forms a 1 m × 1 m square plate. The fiber orientations are 0° in layer 1, 45° in layer 2, and 90° in layer 3. The plate is simply supported on all edges, with a concentrated load of 1000 N at the center. Each layer has distinct elastic properties. Compute and output the maximum interlaminar shear stress.
+
+Key Points to Test:
+- Multiple layers with different orthotropic properties
+- Correct stacking sequence and fiber orientation
+- Extraction of interlaminar shear stress
+
+---
+
+9) High-Temperature Gas Flow with Chemical Reaction
+Task Description:
+In a 2D channel (length 5 m, height 0.1 m), gas enters at 1 m/s and 1000 K. A simple one-step reaction (e.g., combustion or decomposition) occurs in the middle of the channel, causing the temperature to rise to about 1500 K. Simulate the coupled fluid flow, heat transfer, and species concentration change, then output the product concentration and temperature at the outlet.
+
+Key Points to Test:
+- Coupled fluid flow, heat transfer, and chemical reaction
+- Handling of reaction kinetics (transient or steady)
+- Proper species boundary conditions and transport
+
+---
+
+10) Electro-Thermal Coupling
+Task Description:
+A 0.2 m × 0.2 m conductive plate (electrical conductivity σ = 1×10⁶ S/m, thermal conductivity κ = 50 W/(m·K)) has electric current passing through it. The top and bottom surfaces are adiabatic, while the four edges lose heat to the environment at 300 K with a heat transfer coefficient h = 50 W/(m²·K). The plate heats up due to Joule heating. Simulate for 60 seconds and output the time history of temperature at the center and the final temperature distribution.
+
+Key Points to Test:
+- Joule heating from an applied current
+- Mixed boundary conditions (convection and adiabatic)
+- Transient thermal response and temperature rise
+
