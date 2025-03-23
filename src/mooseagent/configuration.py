@@ -14,9 +14,6 @@ class Configuration:
     review_writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
     writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-5-sonnet-latest
     extracter_model: str = "openai/gpt-4o-mini"
-    # alignment_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"
-    # review_writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-7-sonnet-latest
-    # writer_model: str = "siliconflow/deepseek-ai/DeepSeek-V3"  # Defaults to claude-3-5-sonnet-latest
     embedding_function: str = "OPENAI"  # "BGE_M3_EmbeddingFunction"  # Defaults to BGE_M3_EmbeddingFunction
 
     # DIR

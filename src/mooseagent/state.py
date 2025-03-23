@@ -38,12 +38,6 @@ class ExtracterFileState(BaseModel):
     file_list: list[FileState] = Field(description="A list of file name and its detailed description.")
 
 
-class SubtaskState(BaseModel):
-    name: str = Field(description="The name of the sub-task.")
-    retrieve: bool = Field(description="Whether to retrieve information from the database.")
-    description: str = Field(description="The detailed description of the sub-task.")
-
-
 class ExtracterArchitectState(BaseModel):
     code_template: str = Field(description="The proposed MOOSE input card template here")
     retrieve_content: list[str] = Field(
@@ -51,8 +45,6 @@ class ExtracterArchitectState(BaseModel):
     )
 
 
-# class AlignmentState(BaseModel):
-#     detailed_description: str = Field(description="Provide a complete simulation description here")
 class InpcardContentState(BaseModel):
     inpcard: str = Field(
         description="The complete annotated input card of moose without any additional irrelevant explanations or characters."
@@ -80,34 +72,3 @@ class ReviewOneFileState(BaseModel):
     error: str = Field(
         description="Provide the code for the incorrect part of the input card and provide the error message for this part of the code."
     )
-
-
-class ReviewArchitectState(BaseModel):
-    grade_architect: Literal["pass", "fail"] = Field(
-        description="Evaluation result indicating whether the response meets requirements ('pass') or needs revision ('fail')."
-    )
-    feedback_architect: str = Field(
-        description="Feedback after the review.",
-    )
-
-
-class ReviewWriterState(BaseModel):
-    grade: Literal["pass", "fail"] = Field(
-        description="Evaluation result indicating whether the response meets requirements ('pass') or needs revision ('fail')."
-    )
-    feedback: str = Field(description="Feedback after the review.")
-
-
-# class InpcardsState(BaseModel):
-#     inpcards: List[InpcardState] = Field(
-#         description="A list of input cards.",
-#     )
-
-
-# class ReviewState(BaseModel):
-#     grade: Literal["pass", "fail"] = Field(
-#         description="Evaluation result indicating whether the response meets requirements ('pass') or needs revision ('fail')."
-#     )
-#     feedback: str = Field(
-#         description="Feedback on the review.",
-#     )
