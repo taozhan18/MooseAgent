@@ -9,10 +9,12 @@ from langchain_core.runnables import RunnableConfig
 class Configuration:
     """The configurable fields for the chatbot."""
 
+    # v3 is unstable in output given format
     alignment_model: str = "huoshan/deepseek-v3-241226"
     architect_model: str = "huoshan/deepseek-r1-250120"
-    review_writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
-    writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-5-sonnet-latest
+    assistant_model: str = "huoshan/deepseek-v3-241226"
+    review_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
+    writer_model: str = "huoshan/deepseek-r1-250120"  # Defaults to claude-3-5-sonnet-latest
     extracter_model: str = "openai/gpt-4o-mini"
     embedding_function: str = "OPENAI"  # "BGE_M3_EmbeddingFunction"  # Defaults to BGE_M3_EmbeddingFunction
 

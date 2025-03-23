@@ -64,7 +64,7 @@ sys_msg = """You are a knowledgeable assistant specializing in Finite Element Me
 
 
 def helper(state: State):
-    llm = load_chat_model(configuration.review_writer_model).bind_tools(tools)
+    llm = load_chat_model(configuration.assistant_model).bind_tools(tools)
     return {"messages": [llm.invoke([sys_msg] + state["messages"])]}
 
 
