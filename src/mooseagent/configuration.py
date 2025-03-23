@@ -42,7 +42,8 @@ class Configuration:
     dp_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "dp.json")
 
     # run
-    mpi = 1
+    MAX_ITER: int = 10
+    mpi: int = 1
 
     @classmethod
     def from_runnable_config(cls, config: Optional[RunnableConfig] = None) -> "Configuration":

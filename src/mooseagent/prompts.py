@@ -67,9 +67,7 @@ Furthermore, carefully analyze the following error results encountered during ex
 {error}
 </error_results>
 Your response should be formatted as follows (list all errors for a file, ensuring that each file is mentioned only once):
-filename1: The file name of the first input card which has error.
-error: Provide the code for the incorrect part of the input card and provide the error message for this part of the code.
-filename2: The file name of the second input card which has error.
-error: Provide the code for the incorrect part of the input card and provide the error message for this part of the code.
+filename: The file name of the input card which has error.
+error: Provide the code for the incorrect part of the input card and provide the error message for this part of the
 ...
 """

@@ -25,7 +25,7 @@ from langgraph.graph import START, END, StateGraph
 from mooseagent.configuration import Configuration
 from mooseagent.state import (
     FlowState,
-    ReviewState,
+    ReviewOneFileState,
     OneFileState,
     ExtracterFileState,
     InpcardContentState,
@@ -147,9 +147,9 @@ def check_onefile(state: OneFileState, config: RunnableConfig):
         inpcard_code = f.read()
     check = check_app(inpcard_code, state["dp_json"])
     if check != "":
-        return Command(goto="modify", update={"check": check})
+        return Command(goto="modify", update={"check": check, "review_count": state.get("review_count", 0)})
     else:
-        return Command(goto="run_inpcard")
+        return Command(goto="run_inpcard", update={"review_count": state.get("review_count", 0)})
 
 
 def modify(state: OneFileState, config: RunnableConfig):
@@ -193,7 +193,8 @@ def review_inpcard(state: FlowState, config: RunnableConfig):
     Returns:
         dict: A dictionary containing the review results.
     """
-    print(f"---REVIEW INPCARD---")
+    review_count = state.get("review_count", 0) + 1
+    print(f"---REVIEW INPCARD---{review_count}")
     configuration = Configuration.from_runnable_config(config)
     all_input_cards = ""
     for inpcard in state["file_list"]:
@@ -204,26 +205,54 @@ def review_inpcard(state: FlowState, config: RunnableConfig):
 
     # Get configuration
     configuration = Configuration.from_runnable_config(config)
-    review_writer = load_chat_model(configuration.review_model)
+    review_writer = load_chat_model(configuration.review_model).with_structured_output(ReviewOneFileState)
     review_reply = review_writer.invoke(
         [
             SystemMessage(content=system_message_review),
         ]
     )
-    extracter_review = load_chat_model(configuration.extracter_model).with_structured_output(ReviewState)
-    extracter_reply = extracter_review.invoke(
-        [
-            SystemMessage(
-                content="You are a helpful assistant that can extract a list of file name and its error information. You should never change the file name and its error information."
-            ),
-            HumanMessage(content=review_reply.content),
+    # extracter_review = load_chat_model(configuration.extracter_model).with_structured_output(ReviewState)
+    # extracter_reply = extracter_review.invoke(
+    #     [
+    #         SystemMessage(
+    #             content="You are a helpful assistant that can extract a list of file name and its error information.  You should never change the file name and its error information."
+    #         ),
+    #         HumanMessage(content=review_reply.content),
+    #     ]
+    # )
+    # print(extracter_reply.files)
+    review_name = review_reply.filename
+    error = review_reply.error
+    print(f"---REVIEW INPCARD DONE---")
+    for file in state["file_list"]:
+        if review_name == file.file_name:
+            review_inpcard = file
+            break
+    assert review_inpcard is not None, "No file need to be modified."
+    onefile_state = {
+        "inpcard": review_inpcard,
+        "check": error,
+        "dp_json": state["dp_json"],
+        "review_count": review_count,
+    }
+    return onefile_state
+
+
+def route_review(state: FlowState, config: RunnableConfig):
+    return Command(
+        goto=[
+            Send(
+                "modify",
+                {
+                    "inpcard": next(file for file in state["file_list"] if file.file_name == review.filename),
+                    "check": review.error,
+                    "dp_json": state["dp_json"],
+                    "review_count": state["review_count"],
+                },
+            )
+            for review in state["reviews"]
         ]
     )
-    print(f"---REVIEW INPCARD DONE---")
-    return {"reviews": extracter_reply.files}
-
-
-def route_review(state: FlowState):
     return_content = []
     for review in state["reviews"]:
         review_name = review.filename
@@ -236,8 +265,10 @@ def route_review(state: FlowState):
             "inpcard": review_inpcard,
             "check": error,
             "dp_json": state["dp_json"],
+            "review_count": state["review_count"],
         }
         return_content.append(Send("modify", onefile_state))
+    assert return_content != [], "No file need to be modified."
     return Command(goto=return_content)
 
 
@@ -245,6 +276,7 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
     configuration = Configuration.from_runnable_config(config)
     """Save the generated inpcard to a file."""
     inpcards = state["file_list"]
+    review_count = state.get("review_count", 0)
     # ? modify in future
     exec_name = inpcards[0].file_name
     """Run the moose simulation."""
@@ -265,7 +297,10 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
             return {"run_result": "success"}
         else:
             print(f"ERROR:\n{result.stderr}")
-            return {"run_result": result.stderr}
+            if review_count < configuration.MAX_ITER:
+                return {"run_result": result.stderr}
+            else:
+                return {"run_result": "MAX_ITER"}
     else:
         print(f"Moose directory {configuration.MOOSE_DIR} does not exist.")
         return {"run_result": "success"}
@@ -281,6 +316,9 @@ def route_run_inpcard(state: FlowState):
     """
     if state["run_result"] == "success":
         print("The simulation task is completed successfully.")
+        return "success"
+    elif state["run_result"] == "MAX_ITER":
+        print("Up to max iteration.")
         return "success"
     else:
         return "fail"
@@ -302,6 +340,7 @@ architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_edge("align_simulation_description", "human")
 architect_builder.add_edge("architect_input_card", "check_onefile")
 architect_builder.add_edge("modify", "check_onefile")
+architect_builder.add_edge("review_inpcard", "modify")
 # 修改边的定义
 architect_builder.add_conditional_edges(
     "run_inpcard",
@@ -311,7 +350,7 @@ architect_builder.add_conditional_edges(
         "fail": "review_inpcard",
     },
 )
-architect_builder.add_conditional_edges("review_inpcard", route_review, ["modify"])
+# architect_builder.add_conditional_edges("review_inpcard", route_review, ["modify"])
 memory = MemorySaver()
 graph = architect_builder.compile(checkpointer=memory)
 if __name__ == "__main__":

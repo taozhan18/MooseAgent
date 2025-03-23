@@ -21,12 +21,14 @@ class FlowState(TypedDict):
     dp_json: dict[str, str]
     run_result: str
     reviews: ReviewState
+    review_count: int  # the number of reviews
 
 
 class OneFileState(TypedDict):
     inpcard: FileState
     check: str  # check the file
     dp_json: dict[str, str]
+    review_count: int  # 添加review计数器
 
 
 class FileState(BaseModel):
