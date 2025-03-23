@@ -3,10 +3,9 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+run_path = os.getenv("RUN_PATH")
+sys.path.append(run_path)
 from langgraph.checkpoint.memory import MemorySaver
-
-# sys.path.append("../")
-sys.path.append(r"/home/zt/workspace/MooseAgent/src")
 from langchain_community.vectorstores import FAISS
 from mooseagent.configuration import Configuration
 from langchain_community.document_loaders import JSONLoader

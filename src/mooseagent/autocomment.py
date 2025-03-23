@@ -2,8 +2,11 @@ import sys
 import os
 from dotenv import load_dotenv
 
-sys.path.append(r"E:/vscode/python/Agent/langgraph_learning/mooseagent/src")
 load_dotenv()
+
+# 从环境变量中获取路径
+run_path = os.getenv("RUN_PATH")
+sys.path.append(run_path)
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph import StateGraph

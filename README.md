@@ -37,6 +37,7 @@ cp .env.example .env
 ```
 Now we use deepseek and openAi model, you can use [火山](https://console.volcengine.com/) to get your api-key for free.
 
+Note: Change RUN_PATH you .env file to your path.
 ### Setup Model
 
 The defaults values for `model` are defined in src/mooseagent/configuration.py:

@@ -11,11 +11,12 @@ from dotenv import load_dotenv
 import subprocess
 
 load_dotenv()
-from langgraph.checkpoint.memory import MemorySaver
-from langchain.callbacks import get_openai_callback
+run_path = os.getenv("RUN_PATH")
+sys.path.append(run_path)
 
-# sys.path.append("../")
-sys.path.append(r"/home/zt/workspace/MooseAgent/src")
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_community.callbacks.manager import get_openai_callback
+
 from tqdm import tqdm
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -322,9 +323,9 @@ if __name__ == "__main__":
                 print(value)
 
     topic = """
-    One-Dimensional Steady-State Heat Conduction
+Three-Dimensional Coupled Convection and Heat Transfer
 Task Description:
-A metallic rod of length L = 1 m has its two ends kept at constant temperatures of 300 K and 350 K, respectively. The thermal conductivity (k) is 10 W/(m·K). Under steady-state conditions, compute the temperature distribution along the rod and output the temperature profile as a function of position.
+A cubic cavity of side length 1 m is filled with fluid (dynamic viscosity μ = 0.001 Pa·s, density ρ = 1000 kg/m³, thermal conductivity k = 0.6 W/(m·K)). The left wall is maintained at 300 K, the right wall at 400 K, the top and bottom walls are adiabatic, and fluid enters from the bottom with a velocity of 0.01 m/s while exiting freely at the top. Perform a coupled flow and heat transfer simulation until a steady state is reached, then output velocity and temperature fields, as well as the temperature profile at the cavity’s center.
     """
     with get_openai_callback() as cb:
         # 运行异步主程序
