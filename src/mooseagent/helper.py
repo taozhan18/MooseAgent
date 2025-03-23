@@ -1,8 +1,9 @@
 from dotenv import load_dotenv
-import sys
+import sys, os
 
-sys.path.append(r"/home/zt/workspace/MooseAgent/src")
 load_dotenv()
+run_path = os.getenv("RUN_PATH")
+sys.path.append(run_path)
 from langchain_core.runnables import RunnableConfig
 from langchain.tools.retriever import create_retriever_tool
 from langchain.tools.retriever import create_retriever_tool
