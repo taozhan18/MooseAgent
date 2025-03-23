@@ -9,6 +9,7 @@ import sys
 import os, re
 from dotenv import load_dotenv
 import subprocess
+from datetime import datetime
 
 load_dotenv()
 run_path = os.getenv("RUN_PATH")
@@ -29,7 +30,7 @@ from mooseagent.state import (
     ExtracterFileState,
     InpcardContentState,
 )
-from mooseagent.utils import load_chat_model, check_app, combine_code_with_description
+from mooseagent.utils import load_chat_model, check_app, combine_code_with_description, Logger
 from mooseagent.prompts import (
     SYSTEM_ALIGNMENT_PROMPT,
     HUMAN_ALIGNMENT_PROMPT,
@@ -131,6 +132,8 @@ def architect_input_card(state: OneFileState, config: RunnableConfig):
         ]
     )
     inpcard_code = architect_reply.inpcard
+    if os.path.exists(configuration.save_dir) is False:
+        os.makedirs(configuration.save_dir)
     with open(os.path.join(configuration.save_dir, inpcard.file_name), "w", encoding="utf-8") as f:
         f.write(inpcard_code)
     print(f"---ARCHITECT INPUT CARD DONE---")
@@ -156,7 +159,7 @@ def modify(state: OneFileState, config: RunnableConfig):
     with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
         inpcard_code = f.read()
     # print(f"---PRELIMINARY REVIEW INPUT FILE---")  #
-    review_writer = load_chat_model(configuration.review_writer_model).with_structured_output(InpcardContentState)
+    review_writer = load_chat_model(configuration.writer_model).with_structured_output(InpcardContentState)
 
     messages = [
         {
@@ -196,12 +199,12 @@ def review_inpcard(state: FlowState, config: RunnableConfig):
     for inpcard in state["file_list"]:
         with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
             inpcard_code = f.read()
-        all_input_cards += f"-------------------\nThe file name is: {inpcard.file_name}\nThe code of this file is: \n{inpcard_code}-------------------\n\n"
+        all_input_cards += f"-------------------\nThe file name is: {inpcard.file_name}\nThe description of this file is:\n{inpcard.description}\nThe code of this file is: \n{inpcard_code}-------------------\n\n"
     system_message_review = SYSTEM_REVIEW_WRITER_PROMPT.format(allfiles=all_input_cards, error=state["run_result"])
 
     # Get configuration
     configuration = Configuration.from_runnable_config(config)
-    review_writer = load_chat_model(configuration.review_writer_model)
+    review_writer = load_chat_model(configuration.review_model)
     review_reply = review_writer.invoke(
         [
             SystemMessage(content=system_message_review),
@@ -311,10 +314,9 @@ architect_builder.add_conditional_edges("review_inpcard", route_review, ["modify
 memory = MemorySaver()
 graph = architect_builder.compile(checkpointer=memory)
 if __name__ == "__main__":
-    sys.path.append("/home/zt/workspace/MooseAgent/src/")
     config = {"configurable": {"thread_id": "1"}}
-    dp_json_path = "/home/zt/workspace/MooseAgent/src/database/dp.json"
-    with open(dp_json_path, "r", encoding="utf-8") as file:
+    dp_json_path = "database/dp.json"
+    with open(os.path.join(run_path, dp_json_path), "r", encoding="utf-8") as file:
         dp_json = json.load(file)
 
     def stream_graph_updates(user_input: str, dp_json: dict):
@@ -327,6 +329,11 @@ Three-Dimensional Coupled Convection and Heat Transfer
 Task Description:
 A cubic cavity of side length 1 m is filled with fluid (dynamic viscosity μ = 0.001 Pa·s, density ρ = 1000 kg/m³, thermal conductivity k = 0.6 W/(m·K)). The left wall is maintained at 300 K, the right wall at 400 K, the top and bottom walls are adiabatic, and fluid enters from the bottom with a velocity of 0.01 m/s while exiting freely at the top. Perform a coupled flow and heat transfer simulation until a steady state is reached, then output velocity and temperature fields, as well as the temperature profile at the cavity’s center.
     """
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = os.path.join(run_path, f"log/{timestamp}.log")
+    sys.stdout = Logger(output_file)
+
     with get_openai_callback() as cb:
         # 运行异步主程序
         asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))
@@ -334,5 +341,3 @@ A cubic cavity of side length 1 m is filled with fluid (dynamic viscosity μ = 0
         print("Prompt Tokens:", cb.prompt_tokens)
         print("Completion Tokens:", cb.completion_tokens)
         print("Total Tokens:", cb.total_tokens)
-    # graph.invoke({"requirement": topic, "dp_json": dp_json}, config=config)
-    # stream_graph_updates(topic, dp_json)

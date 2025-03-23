@@ -7,7 +7,7 @@ from langchain_core.messages import BaseMessage
 from typing import Dict, List
 from datetime import datetime
 import requests
-import os
+import os, sys
 import ast
 from langchain_openai import ChatOpenAI
 from langchain_deepseek import ChatDeepSeek
@@ -241,3 +241,17 @@ def check_app(inpcard: str, dp_json: dict):
         if doc is None:
             feedback += f"type = {app} is not found in the documentation, please change another application.\n"
     return feedback
+
+
+class Logger:
+    def __init__(self, filename):
+        self.terminal = sys.stdout
+        self.log = open(filename, "w", encoding="utf-8")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
