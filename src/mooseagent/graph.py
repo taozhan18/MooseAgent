@@ -238,7 +238,7 @@ def route_review(state: FlowState):
             "dp_json": state["dp_json"],
         }
         return_content.append(Send("modify", onefile_state))
-    return return_content
+    return Command(goto=return_content)
 
 
 def run_inpcard(state: FlowState, config: RunnableConfig):
@@ -302,6 +302,7 @@ architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_edge("align_simulation_description", "human")
 architect_builder.add_edge("architect_input_card", "check_onefile")
 architect_builder.add_edge("modify", "check_onefile")
+# 修改边的定义
 architect_builder.add_conditional_edges(
     "run_inpcard",
     route_run_inpcard,
