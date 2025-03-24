@@ -11,10 +11,13 @@ import os, sys
 import ast
 from langchain_openai import ChatOpenAI
 from langchain_deepseek import ChatDeepSeek
-import torch
 from typing import List
-from transformers import AutoTokenizer, AutoModel
 
+try:
+    import torch
+    from transformers import AutoTokenizer, AutoModel
+except:
+    print("Please install torch and transformers to use BGE_M3_EmbeddingFunction in local.")
 # from langchain_core.embeddings import Embeddings
 from langchain.embeddings.base import Embeddings
 
@@ -215,14 +218,18 @@ class BGE_M3_EmbeddingFunction(Embeddings):
         self.use_local_model = use_local_model
 
         if self.use_local_model:
-            # 如果在本地推理，这里加载本地模型
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            # 根据 BGE 模型加载对应的 tokenizer、model
-            self.tokenizer = AutoTokenizer.from_pretrained(local_model_name_or_path)
-            self.model = AutoModel.from_pretrained(local_model_name_or_path)
-            self.model.to(self.device)
-            self.model.eval()
-        else:
+            try:
+                # 如果在本地推理，这里加载本地模型
+                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                # 根据 BGE 模型加载对应的 tokenizer、model
+                self.tokenizer = AutoTokenizer.from_pretrained(local_model_name_or_path)
+                self.model = AutoModel.from_pretrained(local_model_name_or_path)
+                self.model.to(self.device)
+                self.model.eval()
+            except:
+                self.use_local_model = False
+                raise ValueError("请安装 torch 和 transformers 以使用 BGE_M3_EmbeddingFunction。")
+        if not self.use_local_model:
             # 如果使用远程服务，则从环境变量里读取 API URL 和 Key
             self.api_url = os.getenv("SILICONFLOW_BASE")
             self.api_key = os.getenv("SILICONFLOW_API_KEY")
