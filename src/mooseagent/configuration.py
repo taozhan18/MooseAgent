@@ -16,10 +16,10 @@ class Configuration:
     review_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
     writer_model: str = "huoshan/deepseek-r1-250120"  # Defaults to claude-3-5-sonnet-latest
     extracter_model: str = "openai/gpt-4o-mini"
-    embedding_function: str = "OPENAI"  # "BGE_M3_EmbeddingFunction"  # Defaults to BGE_M3_EmbeddingFunction
+    embedding_function: str = "BGE_M3_EmbeddingFunction"  # "OPENAI"  or "BGE_M3_EmbeddingFunction"
 
     # DIR
-    ABSOLUTE_PATH: str = "/home/zt/workspace/MooseAgent/src"
+    ABSOLUTE_PATH: str = "E:/vscode/python/Agent/langgraph_learning/mooseagent/src"
     MOOSE_DIR: str = "/home/zt/workspace/mymoose/mymoose-opt"
     save_dir: str = "/home/zt/workspace/MooseAgent/run_path"
     docs_dir: str = os.path.join(ABSOLUTE_PATH, "database")
@@ -29,11 +29,17 @@ class Configuration:
     # RAG
     top_k: int = 3
     rag_model: str = "openai/gpt-4o-mini"
-    rag_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "dp_detail.json")
+
+    # setting for load_vector_database.py
+    rag_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "comment.json")  # comment.json
     batch_size: int = 1  # batch size for adding documents to the vector store
-    PERSIST_DIRECTORY: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + "_faiss_dp")
-    dp_database_path: str = os.path.join(ABSOLUTE_PATH, "database", "OPENAI_faiss_dp")
-    input_database_path: str = os.path.join(ABSOLUTE_PATH, "database", "OPENAI_faiss_inpcard")
+    PERSIST_DIRECTORY: str = os.path.join(
+        ABSOLUTE_PATH, "database", embedding_function + "_faiss_inpcard"
+    )  # database to save
+
+    # database for loading
+    dp_database_path: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + "_faiss_dp")
+    input_database_path: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + "_faiss_inpcard")
 
     # AUTO COMMENT
     use_llm_rag: bool = False

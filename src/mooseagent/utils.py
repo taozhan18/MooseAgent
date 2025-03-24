@@ -11,6 +11,9 @@ import os, sys
 import ast
 from langchain_openai import ChatOpenAI
 from langchain_deepseek import ChatDeepSeek
+import torch
+from typing import List
+from transformers import AutoTokenizer, AutoModel
 
 # from langchain_core.embeddings import Embeddings
 from langchain.embeddings.base import Embeddings
@@ -199,23 +202,84 @@ def extract_sub_tasks(text):
 
 
 class BGE_M3_EmbeddingFunction(Embeddings):
-    def __init__(self):
-        self.api_url = os.getenv("SILICONFLOW_BASE")
-        self.api_key = os.getenv("SILICONFLOW_API_KEY")
-        if self.api_key is None:
-            raise ValueError("未能获取到 SILICONFLOW_API_KEY 环境变量，请检查 .env 文件。")
+    def __init__(
+        self,
+        use_local_model: bool = True,
+        local_model_name_or_path: str = "BAAI/bge-m3",  # 根据你实际需要的模型名称/路径调整
+    ):
+        """
+        :param use_local_model: 是否使用本地模型。True 时将使用本地模型，False 时走远程 API
+        :param local_model_name_or_path: 本地模型的 Hugging Face repo 名或本地路径
+        """
+
+        self.use_local_model = use_local_model
+
+        if self.use_local_model:
+            # 如果在本地推理，这里加载本地模型
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            # 根据 BGE 模型加载对应的 tokenizer、model
+            self.tokenizer = AutoTokenizer.from_pretrained(local_model_name_or_path)
+            self.model = AutoModel.from_pretrained(local_model_name_or_path)
+            self.model.to(self.device)
+            self.model.eval()
+        else:
+            # 如果使用远程服务，则从环境变量里读取 API URL 和 Key
+            self.api_url = os.getenv("SILICONFLOW_BASE")
+            self.api_key = os.getenv("SILICONFLOW_API_KEY")
+            if not self.api_key:
+                raise ValueError("未能获取到 SILICONFLOW_API_KEY 环境变量，请检查 .env 文件。")
+            self.model_name = os.getenv("SILICONFLOW_EMBEDDING_MODEL")
+            if not self.model_name:
+                raise ValueError("未能获取到 SILICONFLOW_EMBEDDING_MODEL 环境变量，请检查 .env 文件。")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
-        data = {"model": os.getenv("SILICONFLOW_EMBEDDING_MODEL"), "input": texts, "encoding_format": "float"}
-        response = requests.post(self.api_url, json=data, headers=headers)
-        response.raise_for_status()
-        embeddings = response.json()["data"]
-        embeddings = [embedding["embedding"] for embedding in embeddings]
-        return embeddings
+        if self.use_local_model:
+            return [self._embed_single_text_local(t) for t in texts]
+        else:
+            return self._embed_remote(texts)
 
     def embed_query(self, text: str) -> List[float]:
+        # 复用 embed_documents 的逻辑
         return self.embed_documents([text])[0]
+
+    def _embed_single_text_local(self, text: str) -> List[float]:
+        """
+        使用本地模型把单条文本转为向量
+        """
+        inputs = self.tokenizer(text, padding=True, truncation=True, return_tensors="pt").to(self.device)
+
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+
+        # 注意：不同的模型可能输出结构不一样，这里以典型的 [CLS] pooling 为例
+        # BGE 系列一般会推荐把最后一层的 CLS 向量或 mean pooling 作为 embedding，
+        # 可根据自己需要修改。
+        # 例如官方推荐使用 mean pooling，就可以用:
+        # token_embeddings = outputs.last_hidden_state
+        # input_mask_expanded = inputs["attention_mask"].unsqueeze(-1).expand(token_embeddings.size()).float()
+        # sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
+        # sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+        # embedding = sum_embeddings / sum_mask
+        #
+        # 这里简单演示 CLS pooling
+        cls_embedding = outputs.last_hidden_state[:, 0, :]
+
+        # 转成 Python list
+        return cls_embedding[0].cpu().numpy().tolist()
+
+    def _embed_remote(self, texts: List[str]) -> List[List[float]]:
+        """
+        走远程服务，把文本发给 API 并返回 embedding
+        """
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        data = {"model": self.model_name, "input": texts, "encoding_format": "float"}
+        response = requests.post(self.api_url, json=data, headers=headers)
+        response.raise_for_status()
+
+        # 取 data 字段再取 embedding
+        embeddings = response.json()["data"]
+        embeddings = [item["embedding"] for item in embeddings]
+        return embeddings
 
 
 def check_app(inpcard: str, dp_json: dict):

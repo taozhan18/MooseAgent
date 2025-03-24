@@ -66,7 +66,7 @@ for i in tqdm(range(0, len(docs), batch_size)):
     if not filtered_batch:
         continue  # 如果批次中没有新文档，跳过
     try:
-        if i == 0:
+        if i == 0 and vectordb is None:
             vectordb = FAISS.from_documents(
                 documents=filtered_batch,
                 embedding=embedding_function,

@@ -128,7 +128,6 @@ E:/vscode/moose\modules\combined\examples\phase_field-mechanics\kks_mechanics_VT
 E:/vscode/moose\modules\combined\examples\phase_field-mechanics\LandauPhaseTrans.i
 E:/vscode/moose\modules\combined\examples\phase_field-mechanics\Nonconserved.i
 E:/vscode/moose\modules\combined\examples\phase_field-mechanics\Pattern1.i
-E:/vscode/moose\modules\combined\examples\phase_field-mechanics\poly_grain_growth_2D_eldrforce.i
 E:/vscode/moose\modules\combined\examples\phase_field-mechanics\SimplePhaseTrans.i
 E:/vscode/moose\modules\combined\examples\publications\rapid_dev\fig6.i
 E:/vscode/moose\modules\combined\examples\publications\rapid_dev\fig7a.i
@@ -343,7 +342,6 @@ E:/vscode/moose\modules\combined\test\tests\thermo_mech\thermo_mech.i
 E:/vscode/moose\modules\combined\test\tests\thermo_mech\thermo_mech_smp.i
 E:/vscode/moose\modules\combined\test\tests\thermo_mech\youngs_modulus_function_temp.i
 E:/vscode/moose\modules\combined\tutorials\introduction\thermal_mechanical\thermomech_step01.i
-E:/vscode/moose\modules\combined\tutorials\introduction\thermal_mechanical_contact\thermomech_cont_step02.i
 E:/vscode/moose\modules\contact\examples\2d_indenter\indenter_rz_fine.i
 E:/vscode/moose\modules\contact\examples\2d_indenter\indenter_rz_nodeface_friction.i
 E:/vscode/moose\modules\contact\examples\3d_berkovich\indenter_berkovich_friction.i
@@ -423,7 +421,6 @@ E:/vscode/moose\modules\contact\test\tests\mortar_cartesian_lms\cylinder_frictio
 E:/vscode/moose\modules\contact\test\tests\mortar_cartesian_lms\frictionless-mortar-3d-friction.i
 E:/vscode/moose\modules\contact\test\tests\mortar_cartesian_lms\frictionless-weighted-gap-lm.i
 E:/vscode/moose\modules\contact\test\tests\mortar_cartesian_lms\two_block_1st_order_constraint_lm_xy.i
-E:/vscode/moose\modules\contact\test\tests\mortar_cartesian_lms\two_block_1st_order_constraint_lm_xy_friction.i
 E:/vscode/moose\modules\contact\test\tests\mortar_cartesian_lms\two_block_1st_order_constraint_lm_xy_friction_pg.i
 E:/vscode/moose\modules\contact\test\tests\mortar_cartesian_lms\two_block_1st_order_constraint_lm_xy_friction_vcp.i
 E:/vscode/moose\modules\contact\test\tests\mortar_dynamics\block-dynamics-action.i
@@ -493,7 +490,6 @@ E:/vscode/moose\modules\contact\test\tests\pressure\pressureAugLag.i
 E:/vscode/moose\modules\contact\test\tests\pressure\pressurePenalty.i
 E:/vscode/moose\modules\contact\test\tests\pressure\pressurePenalty_mechanical_constraint.i
 E:/vscode/moose\modules\contact\test\tests\ranfs-and-scaling\bouncing-block-ranfs.i
-E:/vscode/moose\modules\contact\test\tests\ring_contact\ring_contact.i
 E:/vscode/moose\modules\contact\test\tests\simple_contact\merged.i
 E:/vscode/moose\modules\contact\test\tests\simple_contact\simple_contact_rspherical.i
 E:/vscode/moose\modules\contact\test\tests\simple_contact\simple_contact_rz_test.i
@@ -888,7 +884,6 @@ E:/vscode/moose\modules\heat_transfer\test\tests\gap_heat_transfer_radiation\gap
 E:/vscode/moose\modules\heat_transfer\test\tests\gap_heat_transfer_radiation\sphere.i
 E:/vscode/moose\modules\heat_transfer\test\tests\gap_perfect_transfer\perfect_transfer_gap.i
 E:/vscode/moose\modules\heat_transfer\test\tests\generate_radiation_patch\generate_radiation_patch_grid.i
-E:/vscode/moose\modules\heat_transfer\test\tests\generate_radiation_patch\generate_radiation_patch_grid_2D.i
 E:/vscode/moose\modules\heat_transfer\test\tests\gray_lambert_radiator\coupled_heat_conduction.i
 E:/vscode/moose\modules\heat_transfer\test\tests\gray_lambert_radiator\gray_lambert_cavity.i
 E:/vscode/moose\modules\heat_transfer\test\tests\gray_lambert_radiator\gray_lambert_cavity_automatic_vf.i
@@ -1298,7 +1293,6 @@ E:/vscode/moose\modules\navier_stokes\test\tests\finite_volume\materials\flow_di
 E:/vscode/moose\modules\navier_stokes\test\tests\finite_volume\materials\mixture_material\mixture.i
 E:/vscode/moose\modules\navier_stokes\test\tests\finite_volume\physics\restart\2d_channel_scalar_turbulence_init.i
 E:/vscode/moose\modules\navier_stokes\test\tests\finite_volume\pins\block-restriction\with-empty-block.i
-E:/vscode/moose\modules\navier_stokes\test\tests\finite_volume\pins\block-restriction\segregated\empty-block-segregated.i
 E:/vscode/moose\modules\navier_stokes\test\tests\finite_volume\pins\channel-flow\2d-rc-action.i
 E:/vscode/moose\modules\navier_stokes\test\tests\finite_volume\pins\channel-flow\2d-rc-friction.i
 E:/vscode/moose\modules\navier_stokes\test\tests\finite_volume\pins\channel-flow\2d-rc-rz-by-parts.i
@@ -1383,7 +1377,6 @@ E:/vscode/moose\modules\optimization\examples\diffusion_reaction\optimize.i
 E:/vscode/moose\modules\optimization\examples\diffusion_reaction\parameter_mesh.i
 E:/vscode/moose\modules\optimization\examples\diffusion_reaction_XYDelaunay\forward_and_adjoint.i
 E:/vscode/moose\modules\optimization\examples\diffusion_reaction_XYDelaunay\optimize.i
-E:/vscode/moose\modules\optimization\examples\diffusion_reaction_XYDelaunay\parameter_mesh.i
 E:/vscode/moose\modules\optimization\examples\materialFrequency\wave1D\inversion.i
 E:/vscode/moose\modules\optimization\examples\materialFrequency\wave1D\model_grad.i
 E:/vscode/moose\modules\optimization\examples\materialFrequency\wave1D\sampler.i
@@ -1637,7 +1630,6 @@ E:/vscode/moose\modules\phase_field\test\tests\feature_volume_vpp_test\feature_v
 E:/vscode/moose\modules\phase_field\test\tests\feature_volume_vpp_test\percolation_test.i
 E:/vscode/moose\modules\phase_field\test\tests\flood_counter_aux_test\boundary_intersection.i
 E:/vscode/moose\modules\phase_field\test\tests\flood_counter_aux_test\flood_aux.i
-E:/vscode/moose\modules\phase_field\test\tests\flood_counter_aux_test\flood_aux_elemental.i
 E:/vscode/moose\modules\phase_field\test\tests\flood_counter_aux_test\flood_counter_boundary_restrictable.i
 E:/vscode/moose\modules\phase_field\test\tests\flood_counter_aux_test\nodal_flood_periodic_2var.i
 E:/vscode/moose\modules\phase_field\test\tests\flood_counter_aux_test\simple.i
@@ -1775,7 +1767,6 @@ E:/vscode/moose\modules\phase_field\test\tests\MultiSmoothCircleIC\latticesmooth
 E:/vscode/moose\modules\phase_field\test\tests\MultiSmoothCircleIC\latticesmoothcircleIC_normal_test.i
 E:/vscode/moose\modules\phase_field\test\tests\MultiSmoothCircleIC\latticesmoothcircleIC_small_invalue_test.i
 E:/vscode/moose\modules\phase_field\test\tests\MultiSmoothCircleIC\latticesmoothcircleIC_test.i
-E:/vscode/moose\modules\phase_field\test\tests\MultiSmoothCircleIC\multismoothcircleIC_normal_test.i
 E:/vscode/moose\modules\phase_field\test\tests\MultiSmoothCircleIC\multismoothcircleIC_test.i
 E:/vscode/moose\modules\phase_field\test\tests\MultiSmoothCircleIC\specifiedsmoothcircleIC_test.i
 E:/vscode/moose\modules\phase_field\test\tests\new_initial_conditions\GrainGrowth_initial_from_file.i
@@ -1916,7 +1907,6 @@ E:/vscode/moose\modules\porous_flow\examples\tutorial\11_2D.i
 E:/vscode/moose\modules\porous_flow\examples\tutorial\13.i
 E:/vscode/moose\modules\porous_flow\test\tests\actions\addjoiner.i
 E:/vscode/moose\modules\porous_flow\test\tests\actions\addjoiner_exception.i
-E:/vscode/moose\modules\porous_flow\test\tests\actions\addmaterials.i
 E:/vscode/moose\modules\porous_flow\test\tests\actions\basicthm_borehole.i
 E:/vscode/moose\modules\porous_flow\test\tests\actions\basicthm_h.i
 E:/vscode/moose\modules\porous_flow\test\tests\actions\basicthm_hm.i
@@ -1947,7 +1937,6 @@ E:/vscode/moose\modules\porous_flow\test\tests\aux_kernels\darcy_velocity_lower_
 E:/vscode/moose\modules\porous_flow\test\tests\aux_kernels\element_length_2D.i
 E:/vscode/moose\modules\porous_flow\test\tests\aux_kernels\element_length_3D.i
 E:/vscode/moose\modules\porous_flow\test\tests\aux_kernels\element_length_except1.i
-E:/vscode/moose\modules\porous_flow\test\tests\aux_kernels\element_normal_1D_2D.i
 E:/vscode/moose\modules\porous_flow\test\tests\aux_kernels\element_normal_2D_3D.i
 E:/vscode/moose\modules\porous_flow\test\tests\aux_kernels\element_normal_except1.i
 E:/vscode/moose\modules\porous_flow\test\tests\aux_kernels\element_normal_except2.i
@@ -2006,7 +1995,6 @@ E:/vscode/moose\modules\porous_flow\test\tests\dirackernels\bh_except12.i
 E:/vscode/moose\modules\porous_flow\test\tests\dirackernels\bh_except13.i
 E:/vscode/moose\modules\porous_flow\test\tests\dirackernels\bh_except14.i
 E:/vscode/moose\modules\porous_flow\test\tests\dirackernels\bh_except16.i
-E:/vscode/moose\modules\porous_flow\test\tests\dirackernels\frompps.i
 E:/vscode/moose\modules\porous_flow\test\tests\dirackernels\hfrompps.i
 E:/vscode/moose\modules\porous_flow\test\tests\dirackernels\injection_with_plasticity.i
 E:/vscode/moose\modules\porous_flow\test\tests\dirackernels\pls01.i
@@ -2095,7 +2083,6 @@ E:/vscode/moose\modules\porous_flow\test\tests\gravity\fully_saturated_grav01a.i
 E:/vscode/moose\modules\porous_flow\test\tests\gravity\fully_saturated_grav01b.i
 E:/vscode/moose\modules\porous_flow\test\tests\gravity\fully_saturated_grav01c.i
 E:/vscode/moose\modules\porous_flow\test\tests\gravity\fully_saturated_upwinded_nodens_grav01c_action.i
-E:/vscode/moose\modules\porous_flow\test\tests\gravity\grav01a.i
 E:/vscode/moose\modules\porous_flow\test\tests\gravity\grav01a_fv.i
 E:/vscode/moose\modules\porous_flow\test\tests\gravity\grav01b.i
 E:/vscode/moose\modules\porous_flow\test\tests\gravity\grav01c.i
@@ -2162,7 +2149,6 @@ E:/vscode/moose\modules\porous_flow\test\tests\hysteresis\hys_pc_01.i
 E:/vscode/moose\modules\porous_flow\test\tests\hysteresis\hys_pc_02.i
 E:/vscode/moose\modules\porous_flow\test\tests\hysteresis\hys_pc_2.i
 E:/vscode/moose\modules\porous_flow\test\tests\hysteresis\hys_sat_01.i
-E:/vscode/moose\modules\porous_flow\test\tests\hysteresis\hys_sat_02.i
 E:/vscode/moose\modules\porous_flow\test\tests\hysteresis\hys_sat_03.i
 E:/vscode/moose\modules\porous_flow\test\tests\hysteresis\relperm_jac.i
 E:/vscode/moose\modules\porous_flow\test\tests\hysteresis\relperm_jac_1.i
@@ -2247,7 +2233,6 @@ E:/vscode/moose\modules\porous_flow\test\tests\jacobian\linear_por.i
 E:/vscode/moose\modules\porous_flow\test\tests\jacobian\line_sink01.i
 E:/vscode/moose\modules\porous_flow\test\tests\jacobian\line_sink02.i
 E:/vscode/moose\modules\porous_flow\test\tests\jacobian\line_sink03.i
-E:/vscode/moose\modules\porous_flow\test\tests\jacobian\mass01.i
 E:/vscode/moose\modules\porous_flow\test\tests\jacobian\mass01_fully_saturated.i
 E:/vscode/moose\modules\porous_flow\test\tests\jacobian\mass01_nodens.i
 E:/vscode/moose\modules\porous_flow\test\tests\jacobian\mass02.i
@@ -2286,7 +2271,6 @@ E:/vscode/moose\modules\porous_flow\test\tests\mass_conservation\mass08.i
 E:/vscode/moose\modules\porous_flow\test\tests\mass_conservation\mass09.i
 E:/vscode/moose\modules\porous_flow\test\tests\mass_conservation\mass10.i
 E:/vscode/moose\modules\porous_flow\test\tests\mass_conservation\mass11.i
-E:/vscode/moose\modules\porous_flow\test\tests\mass_conservation\mass12.i
 E:/vscode/moose\modules\porous_flow\test\tests\mass_conservation\mass13.i
 E:/vscode/moose\modules\porous_flow\test\tests\mass_conservation\mass14.i
 E:/vscode/moose\modules\porous_flow\test\tests\mass_conservation\mass15.i
@@ -2475,7 +2459,6 @@ E:/vscode/moose\modules\reactor\test\tests\meshgenerators\coarse_mesh_extra_elem
 E:/vscode/moose\modules\reactor\test\tests\meshgenerators\coarse_mesh_extra_element_id_generator\coarse_elem_restrict_subdomain.i
 E:/vscode/moose\modules\reactor\test\tests\meshgenerators\coarse_mesh_extra_element_id_generator\coarse_elem_subdomain_id.i
 E:/vscode/moose\modules\reactor\test\tests\meshgenerators\control_drum_mesh_generator\drum_depletion_id.i
-E:/vscode/moose\modules\reactor\test\tests\meshgenerators\core_mesh_generator\core_flexible_assembly_stitching_hex.i
 E:/vscode/moose\modules\reactor\test\tests\meshgenerators\core_mesh_generator\core_flexible_assembly_stitching_with_drum_cart.i
 E:/vscode/moose\modules\reactor\test\tests\meshgenerators\core_mesh_generator\core_flexible_assembly_stitching_with_drum_hex.i
 E:/vscode/moose\modules\reactor\test\tests\meshgenerators\core_mesh_generator\core_hex_2d.i
@@ -2723,7 +2706,6 @@ E:/vscode/moose\modules\richards\test\tests\sinks\q2p01.i
 E:/vscode/moose\modules\richards\test\tests\sinks\s01.i
 E:/vscode/moose\modules\richards\test\tests\sinks\s02.i
 E:/vscode/moose\modules\richards\test\tests\sinks\s03.i
-E:/vscode/moose\modules\richards\test\tests\sinks\s04.i
 E:/vscode/moose\modules\richards\test\tests\sinks\s05.i
 E:/vscode/moose\modules\richards\test\tests\sinks\s_fu_01.i
 E:/vscode/moose\modules\richards\test\tests\sinks\s_fu_03.i
@@ -3002,7 +2984,6 @@ E:/vscode/moose\modules\solid_mechanics\test\tests\capped_weak_plane\small_defor
 E:/vscode/moose\modules\solid_mechanics\test\tests\capped_weak_plane\small_deform2.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\capped_weak_plane\small_deform3.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\capped_weak_plane\small_deform4.i
-E:/vscode/moose\modules\solid_mechanics\test\tests\capped_weak_plane\small_deform7.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\capped_weak_plane\small_deform8.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\capped_weak_plane\small_deform9.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\capped_weak_plane\small_deform_cosserat1.i
@@ -3274,7 +3255,6 @@ E:/vscode/moose\modules\solid_mechanics\test\tests\jacobian\mc_update18.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\jacobian\mc_update18_cosserat.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\jacobian\mc_update1_cosserat.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\jacobian\mc_update2.i
-E:/vscode/moose\modules\solid_mechanics\test\tests\jacobian\mc_update21.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\jacobian\mc_update21_cosserat.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\jacobian\mc_update22.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\jacobian\mc_update22_cosserat.i
@@ -3317,7 +3297,6 @@ E:/vscode/moose\modules\solid_mechanics\test\tests\j_integral\j_integral_3d.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\j_integral\j_integral_3d_as_2d.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\j_integral\j_integral_3d_as_2d_topo_q_func.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\j_integral\j_integral_3d_mouth_dir.i
-E:/vscode/moose\modules\solid_mechanics\test\tests\j_integral\j_integral_3d_mouth_dir_end_dir_vec.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\j_integral\j_integral_3d_points.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\j_integral\j_integral_3d_topo_q_func.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\j_integral_vtest\axisymmetric_solution_tran.i
@@ -3363,7 +3342,6 @@ E:/vscode/moose\modules\solid_mechanics\test\tests\lagrangian\cartesian\total\ho
 E:/vscode/moose\modules\solid_mechanics\test\tests\lagrangian\cartesian\total\homogenization\convergence\sd-strain.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\lagrangian\cartesian\total\homogenization\convergence\sd-stress.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\lagrangian\cartesian\total\homogenization\large-tests\1d.i
-E:/vscode/moose\modules\solid_mechanics\test\tests\lagrangian\cartesian\total\homogenization\large-tests\2d.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\lagrangian\cartesian\total\homogenization\large-tests\3d.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\lagrangian\cartesian\total\homogenization\scalar_kernel\2drow.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\lagrangian\cartesian\total\homogenization\scalar_kernel\2dscalar.i
@@ -3438,7 +3416,6 @@ E:/vscode/moose\modules\solid_mechanics\test\tests\mean_cap\random.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\mean_cap\small_deform1.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\mean_cap_TC\random01.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\mean_cap_TC\random02.i
-E:/vscode/moose\modules\solid_mechanics\test\tests\mean_cap_TC\random03.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\mean_cap_TC\random04.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\mean_cap_TC\small_deform2.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\mean_cap_TC\small_deform4.i
@@ -3501,7 +3478,6 @@ E:/vscode/moose\modules\solid_mechanics\test\tests\multi\three_surface16.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\multi\three_surface20.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\multi\three_surface21.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\multi\three_surface22.i
-E:/vscode/moose\modules\solid_mechanics\test\tests\multi\two_surface01.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\multi\two_surface02.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\multi\two_surface03.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\multi\two_surface04.i
@@ -3515,7 +3491,6 @@ E:/vscode/moose\modules\solid_mechanics\test\tests\neml2\crystal_plasticity.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\neml2\custom_model.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\neml2\parameter.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\neml2\rate_independent_plasticity_isokinharden.i
-E:/vscode/moose\modules\solid_mechanics\test\tests\neml2\rate_independent_plasticity_kinharden.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\neml2\viscoplasticity_chaboche.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\neml2\viscoplasticity_isoharden.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\neml2\viscoplasticity_isokinharden.i
@@ -3692,7 +3667,6 @@ E:/vscode/moose\modules\solid_mechanics\test\tests\tensile\random_update.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\tensile\small_deform1.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\tensile\small_deform1_update_version.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\tensile\small_deform2.i
-E:/vscode/moose\modules\solid_mechanics\test\tests\tensile\small_deform2_update_version.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\tensile\small_deform3.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\tensile\small_deform3_update_version.i
 E:/vscode/moose\modules\solid_mechanics\test\tests\tensile\small_deform5.i
@@ -3901,7 +3875,6 @@ E:/vscode/moose\modules\stochastic_tools\test\tests\controls\libtorch_drl_contro
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\beta.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\fdist.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\gamma.i
-E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\johnsonsb.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\kernel_density_1d_datvec.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\kernel_density_1d_sdbw.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\kernel_density_1d_userbw.i
@@ -3909,7 +3882,6 @@ E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\logistic.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\lognormal.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\normal_direct.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\normal_direct_type_error.i
-E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\studentt.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\uniform.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\distributions\weibull.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\functions\drl_reward\drl_reward.i
@@ -3958,7 +3930,6 @@ E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\AISActiveLearning\
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\AISActiveLearning\sub.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\basic\statistics_reporter.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\basic\statistics_reporter_ci.i
-E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\basic\statistics_vpp.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\basic\statistics_vpp_ci.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\BFActiveLearning\main_adam.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\BFActiveLearning\sub.i
@@ -3984,7 +3955,6 @@ E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\sobol\sobol_main.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\sobol\sub.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\statistics\constant_sub.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\statistics\statistics.i
-E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\statistics\statistics_main.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\stochastic_matrix\sample_only.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\stochastic_matrix\stochastic_matrix.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\reporters\stochastic_matrix\sub.i
@@ -4047,7 +4017,6 @@ E:/vscode/moose\modules\stochastic_tools\test\tests\surrogates\nearest_point\sub
 E:/vscode/moose\modules\stochastic_tools\test\tests\surrogates\nearest_point\train.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\surrogates\pod_rb\boundary\sub.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\surrogates\pod_rb\boundary\surr.i
-E:/vscode/moose\modules\stochastic_tools\test\tests\surrogates\pod_rb\boundary\trainer.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\surrogates\pod_rb\errors\sub.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\surrogates\pod_rb\errors\trainer.i
 E:/vscode/moose\modules\stochastic_tools\test\tests\surrogates\pod_rb\internal\sub.i
@@ -4169,7 +4138,6 @@ E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\heat_structure_
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\heat_structure_2d_radiation_coupler_rz\heat_structure_2d_radiation_coupler_rz.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\heat_structure_base\err.no_2nd_order_with_trap.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\heat_structure_base\err.no_T_ic.i
-E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\heat_structure_base\interior_axial_boundaries.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\heat_structure_base\phy.sub_discretization.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\heat_structure_base\phy.variable_init_t.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\heat_structure_cylindrical\by_hsmaterials.i
@@ -4240,7 +4208,6 @@ E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\inlet_velocity_
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\inlet_velocity_t_1phase\phy.reversed_flow.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\inlet_velocity_t_1phase\phy.velocity_t_3eqn.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\junction_one_to_one_1phase\constriction_1phase.i
-E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\junction_one_to_one_1phase\junction_one_to_one_1phase.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\junction_one_to_one_1phase\no_junction_1phase.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\junction_parallel_channels_1phase\conservation.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\junction_parallel_channels_1phase\equal_area_no_junction.i
@@ -4272,7 +4239,6 @@ E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\shaft_connected
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\shaft_connected_turbine_1phase\shaft_motor_turbine.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\shaft_connected_turbine_1phase\turbine_startup.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\simple_turbine_1phase\clg.test.i
-E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\simple_turbine_1phase\jacobian.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\simple_turbine_1phase\phy.conservation.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\simple_turbine_1phase\phy.test.i
 E:/vscode/moose\modules\thermal_hydraulics\test\tests\components\solid_wall_1phase\jacobian.i
@@ -4540,7 +4506,6 @@ E:/vscode/moose\python\peacock\tests\input_tab\InputTreeWriter\gold\simple_diffu
 E:/vscode/moose\python\peacock\tests\input_tab\InputTreeWriter\gold\simple_diffusion_no_diff.i
 E:/vscode/moose\python\peacock\tests\peacock_app\PeacockApp\bad_mesh.i
 E:/vscode/moose\python\peacock\tests\peacock_app\PeacockApp\simple_diffusion.i
-E:/vscode/moose\python\peacock\tests\peacock_app\PeacockApp\simple_diffusion2.i
 E:/vscode/moose\python\peacock\tests\peacock_app\PeacockApp\transient_heat_test.i
 E:/vscode/moose\python\peacock\tests\peacock_app\PeacockMainWindow\transient.i
 E:/vscode/moose\python\pyhit\tests\input.i
@@ -4966,7 +4931,6 @@ E:/vscode/moose\test\tests\functions\piecewise_multilinear\twoDa.i
 E:/vscode/moose\test\tests\functions\piecewise_multilinear\twoDb.i
 E:/vscode/moose\test\tests\functions\piecewise_multilinear\twoD_const.i
 E:/vscode/moose\test\tests\functions\pps_function\pp_function.i
-E:/vscode/moose\test\tests\functions\solution_function\solution_function_exodus_interp_test.i
 E:/vscode/moose\test\tests\functions\solution_function\solution_function_exodus_test.i
 E:/vscode/moose\test\tests\functions\solution_function\solution_function_grad_p1.i
 E:/vscode/moose\test\tests\functions\solution_function\solution_function_rot1.i
@@ -5086,12 +5050,10 @@ E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration\pl_test4tt.i
 E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test3nns.i
 E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test3nnstt.i
 E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test3ns.i
-E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test3nstt.i
 E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test3qns.i
 E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test3qnstt.i
 E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test4nns.i
 E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test4nnstt.i
-E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test4nstt.i
 E:/vscode/moose\test\tests\geomsearch\3d_moving_penetration_smoothing\pl_test4qnstt.i
 E:/vscode/moose\test\tests\geomsearch\3d_penetration_locator\3d_penetration_locator_test.i
 E:/vscode/moose\test\tests\geomsearch\3d_penetration_locator\3d_rings.i
@@ -5342,7 +5304,6 @@ E:/vscode/moose\test\tests\materials\ad_material\ad_stateful_material.i
 E:/vscode/moose\test\tests\materials\ad_piecewise_linear_interpolation_material\piecewise_linear_interpolation_material.i
 E:/vscode/moose\test\tests\materials\boundary_material\bnd_coupling_vol.i
 E:/vscode/moose\test\tests\materials\boundary_material\elem_aux_bc_on_bnd.i
-E:/vscode/moose\test\tests\materials\boundary_material\fv_material_quadrature.i
 E:/vscode/moose\test\tests\materials\compile_time_derivative\test.i
 E:/vscode/moose\test\tests\materials\coupled_value_function\adjac.i
 E:/vscode/moose\test\tests\materials\coupled_value_function\order.i
@@ -5400,7 +5361,6 @@ E:/vscode/moose\test\tests\materials\generic_materials\generic_function_rank_two
 E:/vscode/moose\test\tests\materials\get_material_property_names\get_material_property_any_block_id.i
 E:/vscode/moose\test\tests\materials\get_material_property_names\get_material_property_any_boundary_id.i
 E:/vscode/moose\test\tests\materials\get_material_property_names\get_material_property_block_names.i
-E:/vscode/moose\test\tests\materials\has_material\has_block_prop.i
 E:/vscode/moose\test\tests\materials\has_material\has_boundary_prop.i
 E:/vscode/moose\test\tests\materials\interface_material\interface_value_material.i
 E:/vscode/moose\test\tests\materials\interface_material\interface_value_material_noIK.i
@@ -5458,7 +5418,6 @@ E:/vscode/moose\test\tests\materials\stateful_prop\stateful_prop_test_older.i
 E:/vscode/moose\test\tests\materials\stateful_prop\stateful_reg.i
 E:/vscode/moose\test\tests\materials\stateful_prop\stateful_reg_template.i
 E:/vscode/moose\test\tests\materials\types\test.i
-E:/vscode/moose\test\tests\materials\var_coupling\var_coupling.i
 E:/vscode/moose\test\tests\materials\var_coupling\var_stateful_coupling.i
 E:/vscode/moose\test\tests\mesh\abaqus_input\testcube_elset_name.i
 E:/vscode/moose\test\tests\mesh\abaqus_input\testcube_elset_name_ws.i
@@ -5515,7 +5474,6 @@ E:/vscode/moose\test\tests\mesh\mixed_dim\1d_2d.i
 E:/vscode/moose\test\tests\mesh\mixed_dim\1d_2d_w_matl.i
 E:/vscode/moose\test\tests\mesh\mixed_dim\1d_3d.i
 E:/vscode/moose\test\tests\mesh\multi_elem_integers\multi_element_integer.i
-E:/vscode/moose\test\tests\mesh\named_entities\named_entities_test.i
 E:/vscode/moose\test\tests\mesh\named_entities\named_entities_test_xda.i
 E:/vscode/moose\test\tests\mesh\named_entities\name_on_the_fly.i
 E:/vscode/moose\test\tests\mesh\named_entities\periodic_bc_names_test.i
@@ -5802,7 +5760,6 @@ E:/vscode/moose\test\tests\meshgenerators\transfinite_generator\quadrilater_gene
 E:/vscode/moose\test\tests\meshgenerators\transform_generator\rotate_and_scale.i
 E:/vscode/moose\test\tests\meshgenerators\transform_generator\translate.i
 E:/vscode/moose\test\tests\meshgenerators\transform_generator\translate_min_origin.i
-E:/vscode/moose\test\tests\meshgenerators\unique_extra_id_mesh_generator\unique_id.i
 E:/vscode/moose\test\tests\meshgenerators\unique_extra_id_mesh_generator\unique_id_cut.i
 E:/vscode/moose\test\tests\meshgenerators\xyz_delaunay_generator\xyzdelaunay_mesh_generator.i
 E:/vscode/moose\test\tests\meshgenerators\xyz_delaunay_generator\xyzdelaunay_nested.i
@@ -5864,8 +5821,6 @@ E:/vscode/moose\test\tests\misc\boundary_variable_check\three-domains\test.i
 E:/vscode/moose\test\tests\misc\check_error\3D_RZ_error_check.i
 E:/vscode/moose\test\tests\misc\check_error\add_aux_variable_multiple_subdomain_test.i
 E:/vscode/moose\test\tests\misc\check_error\add_aux_variable_multiple_test.i
-E:/vscode/moose\test\tests\misc\check_error\assertion_test.i
-E:/vscode/moose\test\tests\misc\check_error\aux_kernel_with_var.i
 E:/vscode/moose\test\tests\misc\check_error\bad_bc_test.i
 E:/vscode/moose\test\tests\misc\check_error\bad_enum_test.i
 E:/vscode/moose\test\tests\misc\check_error\bad_executioner_test.i
@@ -5946,7 +5901,6 @@ E:/vscode/moose\test\tests\misc\check_error\nodal_material_test.i
 E:/vscode/moose\test\tests\misc\check_error\nodal_value_off_block.i
 E:/vscode/moose\test\tests\misc\check_error\old_integrity_check.i
 E:/vscode/moose\test\tests\misc\check_error\override_name_variable_test.i
-E:/vscode/moose\test\tests\misc\check_error\range_check_param.i
 E:/vscode/moose\test\tests\misc\check_error\same_name_variable_test.i
 E:/vscode/moose\test\tests\misc\check_error\scalar_aux_kernel_with_var.i
 E:/vscode/moose\test\tests\misc\check_error\scalar_dot_integrity_check.i
@@ -6055,7 +6009,6 @@ E:/vscode/moose\test\tests\mortar\displaced-gap-conductance-2d-bnd-coupling\gap-
 E:/vscode/moose\test\tests\mortar\displaced-gap-conductance-2d-bnd-coupling\gap-conductance.i
 E:/vscode/moose\test\tests\mortar\mortar-q-points\test.i
 E:/vscode/moose\test\tests\mortar\periodic-value\periodic.i
-E:/vscode/moose\test\tests\mortar\periodic_segmental_constraint\penalty_periodic_aux.i
 E:/vscode/moose\test\tests\mortar\periodic_segmental_constraint\penalty_periodic_checker2d.i
 E:/vscode/moose\test\tests\mortar\periodic_segmental_constraint\penalty_periodic_simple2d.i
 E:/vscode/moose\test\tests\mortar\periodic_segmental_constraint\penalty_periodic_split.i
@@ -6097,7 +6050,6 @@ E:/vscode/moose\test\tests\multiapps\full_solve_multiapp\sub.i
 E:/vscode/moose\test\tests\multiapps\full_solve_multiapp_reset\sub.i
 E:/vscode/moose\test\tests\multiapps\grid-sequencing\coarse.i
 E:/vscode/moose\test\tests\multiapps\grid-sequencing\fine.i
-E:/vscode/moose\test\tests\multiapps\grid-sequencing\vi-coarse.i
 E:/vscode/moose\test\tests\multiapps\grid-sequencing\vi-coarser.i
 E:/vscode/moose\test\tests\multiapps\grid-sequencing\vi-fine-alone.i
 E:/vscode/moose\test\tests\multiapps\grid-sequencing\vi-fine.i
@@ -6316,7 +6268,6 @@ E:/vscode/moose\test\tests\outputs\dofmap\simple_transient.i
 E:/vscode/moose\test\tests\outputs\error\all_reserved.i
 E:/vscode/moose\test\tests\outputs\error\duplicate_outputs.i
 E:/vscode/moose\test\tests\outputs\error\duplicate_output_files.i
-E:/vscode/moose\test\tests\outputs\error\none_reserved.i
 E:/vscode/moose\test\tests\outputs\exodus\exodus.i
 E:/vscode/moose\test\tests\outputs\exodus\exodus_discontinuous.i
 E:/vscode/moose\test\tests\outputs\exodus\exodus_enable_initial.i
@@ -6373,7 +6324,6 @@ E:/vscode/moose\test\tests\outputs\output_interface\marker.i
 E:/vscode/moose\test\tests\outputs\output_on\postprocessors.i
 E:/vscode/moose\test\tests\outputs\oversample\adapt.i
 E:/vscode/moose\test\tests\outputs\oversample\ex02_adapt.i
-E:/vscode/moose\test\tests\outputs\oversample\oversample.i
 E:/vscode/moose\test\tests\outputs\oversample\oversample_file.i
 E:/vscode/moose\test\tests\outputs\oversample\over_sampling_second_file.i
 E:/vscode/moose\test\tests\outputs\oversample\over_sampling_test_file.i
@@ -6531,9 +6481,7 @@ E:/vscode/moose\test\tests\postprocessors\function_element_average\function_elem
 E:/vscode/moose\test\tests\postprocessors\function_element_integral\function_element_integral.i
 E:/vscode/moose\test\tests\postprocessors\function_sideintegral\function_sideintegral.i
 E:/vscode/moose\test\tests\postprocessors\function_side_average\function_side_average.i
-E:/vscode/moose\test\tests\postprocessors\function_value_pps\function_value_pps.i
 E:/vscode/moose\test\tests\postprocessors\function_value_pps\pps_args_function_value_pps.i
-E:/vscode/moose\test\tests\postprocessors\fvfluxbc_integral\fvfluxbc_integral.i
 E:/vscode/moose\test\tests\postprocessors\geometry\2d_geometry.i
 E:/vscode/moose\test\tests\postprocessors\geometry\3d_geometry.i
 E:/vscode/moose\test\tests\postprocessors\interface_diffusive_flux\interface_diffusive_flux.i
@@ -6600,7 +6548,6 @@ E:/vscode/moose\test\tests\postprocessors\side_average_value\side_average_functo
 E:/vscode/moose\test\tests\postprocessors\side_average_value\side_average_material_property.i
 E:/vscode/moose\test\tests\postprocessors\side_average_value\side_average_value_test.i
 E:/vscode/moose\test\tests\postprocessors\side_diffusive_flux_average\side_diffusive_flux_average.i
-E:/vscode/moose\test\tests\postprocessors\side_diffusive_flux_average\side_diffusive_flux_average_fv.i
 E:/vscode/moose\test\tests\postprocessors\side_diffusive_flux_integral\side_diffusive_flux_integral.i
 E:/vscode/moose\test\tests\postprocessors\side_diffusive_flux_integral\side_diffusive_flux_integral_fv.i
 E:/vscode/moose\test\tests\postprocessors\side_diffusive_flux_integral\side_diffusive_flux_integral_linear_fv.i
@@ -6619,7 +6566,6 @@ E:/vscode/moose\test\tests\postprocessors\variable_residual_norm\variable_residu
 E:/vscode/moose\test\tests\postprocessors\vector_postprocessor_comparison\vector_postprocessor_comparison.i
 E:/vscode/moose\test\tests\postprocessors\vector_postprocessor_component\vpp_component.i
 E:/vscode/moose\test\tests\postprocessors\vector_postprocessor_reduction\vpp_reduction.i
-E:/vscode/moose\test\tests\postprocessors\volume\sphere1D.i
 E:/vscode/moose\test\tests\preconditioners\auto_smp\ad_coupled_convection.i
 E:/vscode/moose\test\tests\preconditioners\fsp\array-test.i
 E:/vscode/moose\test\tests\preconditioners\fsp\fsp_test.i
@@ -6770,7 +6716,6 @@ E:/vscode/moose\test\tests\scaling\array-variables\test.i
 E:/vscode/moose\test\tests\scaling\ignore-variables\ignore.i
 E:/vscode/moose\test\tests\scaling\off-diag-scaling\test.i
 E:/vscode/moose\test\tests\scaling\remove-singularity\test.i
-E:/vscode/moose\test\tests\scaling\residual-based\residual-based-two-var.i
 E:/vscode/moose\test\tests\scaling\residual-based\residual-based.i
 E:/vscode/moose\test\tests\scaling\scalar-field-grouping\test.i
 E:/vscode/moose\test\tests\tag\2d_diffusion_dg_tag.i
@@ -6836,7 +6781,6 @@ E:/vscode/moose\test\tests\time_integrators\actually_explicit_euler\actually_exp
 E:/vscode/moose\test\tests\time_integrators\actually_explicit_euler\actually_explicit_euler_lump_preconditioned.i
 E:/vscode/moose\test\tests\time_integrators\actually_explicit_euler_verification\ee-1d-linear.i
 E:/vscode/moose\test\tests\time_integrators\actually_explicit_euler_verification\ee-1d-quadratic.i
-E:/vscode/moose\test\tests\time_integrators\actually_explicit_euler_verification\ee-2d-linear-adapt.i
 E:/vscode/moose\test\tests\time_integrators\actually_explicit_euler_verification\ee-2d-linear.i
 E:/vscode/moose\test\tests\time_integrators\actually_explicit_euler_verification\ee-2d-quadratic.i
 E:/vscode/moose\test\tests\time_integrators\actually_explicit_euler_verification\ee-ode.i
@@ -6845,10 +6789,8 @@ E:/vscode/moose\test\tests\time_integrators\bdf2\bdf2_adapt.i
 E:/vscode/moose\test\tests\time_integrators\central-difference\ad_central_difference_dotdot.i
 E:/vscode/moose\test\tests\time_integrators\central-difference\central_difference.i
 E:/vscode/moose\test\tests\time_integrators\convergence\explicit_convergence.i
-E:/vscode/moose\test\tests\time_integrators\convergence\implicit_convergence.i
 E:/vscode/moose\test\tests\time_integrators\crank-nicolson\cranic.i
 E:/vscode/moose\test\tests\time_integrators\crank-nicolson\cranic_adapt.i
-E:/vscode/moose\test\tests\time_integrators\dirk\dirk-2d-heat-adap.i
 E:/vscode/moose\test\tests\time_integrators\dirk\dirk-2d-heat.i
 E:/vscode/moose\test\tests\time_integrators\explicit-euler\ee-1d-linear.i
 E:/vscode/moose\test\tests\time_integrators\explicit-euler\ee-1d-quadratic-neumann.i
@@ -6922,7 +6864,6 @@ E:/vscode/moose\test\tests\transfers\coord_transform\single-app.i
 E:/vscode/moose\test\tests\transfers\coord_transform\transform-main-main-app.i
 E:/vscode/moose\test\tests\transfers\coord_transform\transform-main-sub-app.i
 E:/vscode/moose\test\tests\transfers\coord_transform\both-transformed\copy\main-app.i
-E:/vscode/moose\test\tests\transfers\coord_transform\both-transformed\copy\sub-app.i
 E:/vscode/moose\test\tests\transfers\coord_transform\both-transformed\interpolation\main-app.i
 E:/vscode/moose\test\tests\transfers\coord_transform\both-transformed\interpolation\sub-app.i
 E:/vscode/moose\test\tests\transfers\coord_transform\both-transformed\mesh-function\main-app.i
@@ -6994,7 +6935,6 @@ E:/vscode/moose\test\tests\transfers\general_field\shape_evaluation\coord_transf
 E:/vscode/moose\test\tests\transfers\general_field\shape_evaluation\displaced\child.i
 E:/vscode/moose\test\tests\transfers\general_field\shape_evaluation\displaced\parent.i
 E:/vscode/moose\test\tests\transfers\general_field\shape_evaluation\duplicated_shape_evaluation_tests\exec_on_mismatch.i
-E:/vscode/moose\test\tests\transfers\general_field\shape_evaluation\duplicated_shape_evaluation_tests\fromsub.i
 E:/vscode/moose\test\tests\transfers\general_field\shape_evaluation\duplicated_shape_evaluation_tests\fromsub_source_displaced.i
 E:/vscode/moose\test\tests\transfers\general_field\shape_evaluation\duplicated_shape_evaluation_tests\fromsub_sub.i
 E:/vscode/moose\test\tests\transfers\general_field\shape_evaluation\duplicated_shape_evaluation_tests\fromsub_target_displaced.i
@@ -7419,7 +7359,6 @@ E:/vscode/moose\tutorials\darcy_thermo_mech\step03_darcy_material\tests\kernels\
 E:/vscode/moose\tutorials\darcy_thermo_mech\step03_darcy_material\tests\materials\packed_column\packed_column.i
 E:/vscode/moose\tutorials\darcy_thermo_mech\step04_velocity_aux\problems\step4.i
 E:/vscode/moose\tutorials\darcy_thermo_mech\step04_velocity_aux\tests\auxkernels\velocity_aux\velocity_aux.i
-E:/vscode/moose\tutorials\darcy_thermo_mech\step04_velocity_aux\tests\kernels\simple_diffusion\simple_diffusion.i
 E:/vscode/moose\tutorials\darcy_thermo_mech\step05_heat_conduction\problems\step5a_steady.i
 E:/vscode/moose\tutorials\darcy_thermo_mech\step05_heat_conduction\problems\step5b_transient.i
 E:/vscode/moose\tutorials\darcy_thermo_mech\step05_heat_conduction\problems\step5c_outflow.i
@@ -7488,7 +7427,6 @@ E:/vscode/moose\tutorials\tutorial01_app_development\step08_test_harness\test\te
 E:/vscode/moose\tutorials\tutorial01_app_development\step08_test_harness\test\tests\kernels\simple_diffusion\simple_diffusion.i
 E:/vscode/moose\tutorials\tutorial01_app_development\step09_mat_props\problems\pressure_diffusion.i
 E:/vscode/moose\tutorials\tutorial01_app_development\step09_mat_props\test\tests\kernels\darcy_pressure\darcy_pressure_test.i
-E:/vscode/moose\tutorials\tutorial01_app_development\step09_mat_props\test\tests\kernels\simple_diffusion\simple_diffusion.i
 E:/vscode/moose\tutorials\tutorial01_app_development\step09_mat_props\test\tests\materials\packed_column\packed_column_test.i
 E:/vscode/moose\tutorials\tutorial01_app_development\step10_auxkernels\problems\pressure_diffusion.i
 E:/vscode/moose\tutorials\tutorial01_app_development\step10_auxkernels\test\tests\auxkernels\darcy_velocity\darcy_velocity_test.i
