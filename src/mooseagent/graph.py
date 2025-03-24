@@ -354,7 +354,7 @@ architect_builder.add_conditional_edges(
 memory = MemorySaver()
 graph = architect_builder.compile(checkpointer=memory)
 if __name__ == "__main__":
-    config = {"configurable": {"thread_id": "1"}}
+    config = {"configurable": {"thread_id": "1"}, "recursion_limit": 10000}
     dp_json_path = "database/dp.json"
     with open(os.path.join(run_path, dp_json_path), "r", encoding="utf-8") as file:
         dp_json = json.load(file)
@@ -365,9 +365,10 @@ if __name__ == "__main__":
                 print(value)
 
     topic = """
-Three-Dimensional Coupled Convection and Heat Transfer
+Three-Dimensional Porous Media Flow
 Task Description:
-A cubic cavity of side length 1 m is filled with fluid (dynamic viscosity μ = 0.001 Pa·s, density ρ = 1000 kg/m³, thermal conductivity k = 0.6 W/(m·K)). The left wall is maintained at 300 K, the right wall at 400 K, the top and bottom walls are adiabatic, and fluid enters from the bottom with a velocity of 0.01 m/s while exiting freely at the top. Perform a coupled flow and heat transfer simulation until a steady state is reached, then output velocity and temperature fields, as well as the temperature profile at the cavity’s center.
+A 1 m × 1 m × 1 m cubic block of soil has a water head of 5 m at the bottom and 1 m at the top, with the lateral faces impermeable. The permeability k = 10⁻⁵ m/s. Compute the steady-state flow field and pressure distribution inside the block.
+You can make the settings a bit rougher to speed up the simulation
     """
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

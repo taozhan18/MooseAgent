@@ -21,6 +21,8 @@ else:
     goto modify.
 ```
 
+![流程图](static/agentflow.png)
+![自动注释流程图](static/autocomment.png)
 ## Getting Started
 1. Install
 
