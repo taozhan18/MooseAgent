@@ -12,12 +12,13 @@ import ast
 from langchain_openai import ChatOpenAI
 from langchain_deepseek import ChatDeepSeek
 from typing import List
+import warnings
 
 try:
     import torch
     from transformers import AutoTokenizer, AutoModel
 except:
-    print("Please install torch and transformers to use BGE_M3_EmbeddingFunction in local.")
+    warnings.warn("Please install torch and transformers to use BGE_M3_EmbeddingFunction in local.", UserWarning)
 # from langchain_core.embeddings import Embeddings
 from langchain.embeddings.base import Embeddings
 
@@ -228,16 +229,16 @@ class BGE_M3_EmbeddingFunction(Embeddings):
                 self.model.eval()
             except:
                 self.use_local_model = False
-                raise ValueError("请安装 torch 和 transformers 以使用 BGE_M3_EmbeddingFunction。")
+                warnings.warn("Local BGE-M3 is not supported. Using remote instead.", UserWarning)
         if not self.use_local_model:
             # 如果使用远程服务，则从环境变量里读取 API URL 和 Key
-            self.api_url = os.getenv("SILICONFLOW_BASE")
-            self.api_key = os.getenv("SILICONFLOW_API_KEY")
+            self.api_url = os.getenv("BGE_M3_API_BASE")
+            self.api_key = os.getenv("BGE_M3_API_KEY")
             if not self.api_key:
-                raise ValueError("未能获取到 SILICONFLOW_API_KEY 环境变量，请检查 .env 文件。")
-            self.model_name = os.getenv("SILICONFLOW_EMBEDDING_MODEL")
+                raise ValueError("未能获取到 BGE_M3_API_KEY 环境变量，请检查 .env 文件。")
+            self.model_name = os.getenv("EMBEDDING_MODEL")
             if not self.model_name:
-                raise ValueError("未能获取到 SILICONFLOW_EMBEDDING_MODEL 环境变量，请检查 .env 文件。")
+                raise ValueError("未能获取到 EMBEDDING_MODEL 环境变量，请检查 .env 文件。")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         if self.use_local_model:

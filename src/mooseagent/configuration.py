@@ -19,7 +19,7 @@ class Configuration:
     embedding_function: str = "BGE_M3_EmbeddingFunction"  # "OPENAI"  or "BGE_M3_EmbeddingFunction"
 
     # DIR
-    ABSOLUTE_PATH: str = "E:/vscode/python/Agent/langgraph_learning/mooseagent/src"
+    ABSOLUTE_PATH: str = "/home/zt/workspace/MooseAgent/src"
     MOOSE_DIR: str = "/home/zt/workspace/mymoose/mymoose-opt"
     save_dir: str = "/home/zt/workspace/MooseAgent/run_path"
     docs_dir: str = os.path.join(ABSOLUTE_PATH, "database")
