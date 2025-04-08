@@ -75,26 +75,10 @@ Key Points to Test:
 
 ---
 
-8) Stress Analysis of a Composite Laminated Plate
-Task Description:
-A 3-layer composite laminate (each layer 1 mm thick, total thickness 3 mm) forms a 1 m × 1 m square plate. The fiber orientations are 0° in layer 1, 45° in layer 2, and 90° in layer 3. The plate is simply supported on all edges, with a concentrated load of 1000 N at the center. Each layer has distinct elastic properties. Compute and output the maximum interlaminar shear stress.
-
-Key Points to Test:
-- Multiple layers with different orthotropic properties
-- Correct stacking sequence and fiber orientation
-- Extraction of interlaminar shear stress
-
+8) Construct a Moose phase field simulation case to simulate the solidification process of pure metal in a two-dimensional rectangular region. This task will use a phase field model to simulate the transition of solid-liquid phase by solving the coupled evolution equation of phase field variables and temperature field. The boundary condition is to apply a low temperature below the solidification point on one side of the rectangular region to drive solidification, with the initial condition being that the metal is in a liquid state. The goal is to observe the formation and growth of solid phases, as well as the evolution and temperature distribution of solid-liquid interfaces.
 ---
 
-9) High-Temperature Gas Flow with Chemical Reaction
-Task Description:
-In a 2D channel (length 5 m, height 0.1 m), gas enters at 1 m/s and 1000 K. A simple one-step reaction (e.g., combustion or decomposition) occurs in the middle of the channel, causing the temperature to rise to about 1500 K. Simulate the coupled fluid flow, heat transfer, and species concentration change, then output the product concentration and temperature at the outlet.
-
-Key Points to Test:
-- Coupled fluid flow, heat transfer, and chemical reaction
-- Handling of reaction kinetics (transient or steady)
-- Proper species boundary conditions and transport
-
+9) Construct a Moose multi field coupling test case to simulate the thermal structural coupling behavior of a two-dimensional rectangular thin plate. This task will use the Multiapp feature, the main application to solve heat conduction problems, where one side of the thin plate is heated while the other side remains at a low temperature; The sub application solves structural mechanics problems, fixes one side of the thin plate, and uses the temperature distribution calculated by the main application as the thermal load to analyze the thermal expansion and displacement of the thin plate. The data will be transferred from the main application to the sub applications through Moose's Transfer system to achieve coupling.
 ---
 
 10) Electro-Thermal Coupling
@@ -105,4 +89,3 @@ Key Points to Test:
 - Joule heating from an applied current
 - Mixed boundary conditions (convection and adiabatic)
 - Transient thermal response and temperature rise
-
