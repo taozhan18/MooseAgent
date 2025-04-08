@@ -1,0 +1,3 @@
+Two-Dimensional Transient Heat Conduction
+Task Description:
+Within a 1 m × 1 m square domain, the initial temperature is 300 K everywhere. The left and bottom boundaries are kept at 300 K, the right boundary at 500 K, and the top boundary is adiabatic. The thermal conductivity (k) is 20 W/(m·K), specific heat capacity cp = 1000 J/(kg·K), and density ρ = 7850 kg/m³. Simulate 50 seconds and output the temperature distribution every 10 seconds.

@@ -1,0 +1,3 @@
+Two-Dimensional Plane Elasticity Simulation
+Task Description:
+A rectangular plate (2 m × 1 m) is fixed along the left edge and subjected to a uniform tensile stress of 5 MPa on the right edge. The material is linear elastic with Young’s modulus E = 200 GPa and Poisson’s ratio ν = 0.3. The goal is to compute the stress and strain fields in the plate and output the maximum principal stress and strain.

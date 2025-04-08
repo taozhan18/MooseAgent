@@ -1,0 +1,3 @@
+Two-Dimensional Nonlinear Material Mechanics
+Task Description:
+A 1 m × 1 m square plate is fixed on the left edge and subjected to a prescribed horizontal displacement Δx = 0.01 m on the right edge. The material has elastic-plastic behavior with a bilinear hardening model: yield stress σy = 250 MPa, Young’s modulus E = 210 GPa, and hardening modulus H = 1 GPa. Output the final plastic strain distribution and identify the plastic zone.

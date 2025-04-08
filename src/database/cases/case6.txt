@@ -1,0 +1,3 @@
+Three-Dimensional Porous Media Flow
+Task Description:
+A 1 m × 1 m × 1 m cubic block of soil has a water head of 5 m at the bottom and 1 m at the top, with the lateral faces impermeable. The permeability k = 10⁻⁵ m/s. Compute the steady-state flow field and pressure distribution inside the block.

@@ -1,0 +1,3 @@
+Heat Conduction with Phase Change
+Task Description:
+A 0.1 m long metal rod is kept at 300 K on one end and 200 K on the other. The melting/solidification temperature is 250 K, latent heat L = 2×10⁵ J/kg, heat capacity cp is the same for solid and liquid, and thermal conductivity is κs = 30 (solid) and κl = 15 (liquid). Simulate 500 s to track the progression of the phase-change front over time.
