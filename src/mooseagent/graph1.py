@@ -26,8 +26,6 @@ from mooseagent.configuration import Configuration
 from mooseagent.state import (
     FlowState,
     FileState,
-    ReviewOneFileState,
-    OneFileState,
     ExtracterFileState,
     InpcardContentState,
     ModifyState,
@@ -250,14 +248,11 @@ architect_builder.add_node("align_simulation_description", align_simulation_desc
 architect_builder.add_node("human", human)
 architect_builder.add_node("modify", modify)
 architect_builder.add_node("check_onefile", check_onefile)
-# architect_builder.add_node("review_inpcard", review_inpcard)
 architect_builder.add_node("run_inpcard", run_inpcard)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_edge("align_simulation_description", "human")
-# architect_builder.add_edge("architect_input_card", "check_onefile")
 architect_builder.add_edge("modify", "check_onefile")
-# architect_builder.add_edge("review_inpcard", "modify")
 # 修改边的定义
 architect_builder.add_conditional_edges(
     "run_inpcard",
