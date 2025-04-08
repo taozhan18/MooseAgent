@@ -25,6 +25,7 @@ from langgraph.graph import START, END, StateGraph
 from mooseagent.configuration import Configuration
 from mooseagent.state import (
     FlowState,
+    FileState,
     ReviewOneFileState,
     OneFileState,
     ExtracterFileState,
@@ -37,6 +38,7 @@ from mooseagent.prompts import (
     SYSTEM_REVIEW_WRITER_PROMPT,
     SYSTEM_ARCHITECT_PROMPT,
     SYSTEM_WRITER_PROMPT,
+    MultiAPP_PROMPT,
     # HUMAN_ARCHITECT_PROMPT,
 )
 from mooseagent.helper import bulid_helper, retriever_input
@@ -62,7 +64,7 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
     human_message_alignment = HUMAN_ALIGNMENT_PROMPT.format(requirement=state["requirement"], feedback=feedback)
     alignment_reply = alignment.invoke(
         [
-            SystemMessage(content=SYSTEM_ALIGNMENT_PROMPT),
+            SystemMessage(content=SYSTEM_ALIGNMENT_PROMPT + MultiAPP_PROMPT),
             HumanMessage(content=human_message_alignment),
         ]
     )
@@ -79,25 +81,17 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
     return {"file_list": extracter_reply.file_list}
 
 
-def human(state: FlowState, config: RunnableConfig):
+async def human(state: FlowState, config: RunnableConfig):
     # interrupt_message = "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
     # feedback = interrupt(interrupt_message)
     feedback = input(
         "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
     )
     if feedback == "yes":
-        return Command(
-            goto=[
-                Send(
-                    "architect_input_card",
-                    {
-                        "inpcard": file,
-                        "dp_json": state["dp_json"],
-                    },
-                )
-                for file in state["file_list"]
-            ]
-        )
+        multiapps = True if len(state["file_list"]) > 1 else False
+        tasks = [architect_input_card(file, config, multiapps) for file in state["file_list"]]
+        await asyncio.gather(*tasks)
+        return Command(goto="run_inpcard", update=state)
     # If the user provides feedback, regenerate the report plan
     elif isinstance(feedback, str):
         # Treat this as feedback
@@ -106,7 +100,7 @@ def human(state: FlowState, config: RunnableConfig):
         raise TypeError(f"Interrupt value of type {type(feedback)} is not supported.")
 
 
-def architect_input_card(state: OneFileState, config: RunnableConfig):
+async def architect_input_card(state: FileState, config: RunnableConfig, multiapps: bool = False):
     """Generate the architect of the input card
     Args:
         state (OneFileState): The current state of the conversation.
@@ -114,17 +108,19 @@ def architect_input_card(state: OneFileState, config: RunnableConfig):
     Returns:
         dict: A dictionary containing the model's response
     """
-    inpcard = state["inpcard"]
+    # inpcard = state["inpcard"]
     configuration = Configuration.from_runnable_config(config)
     print(f"---ARCHITECT INPUT CARD---")  #
-    similar_cases = retriever_input.invoke(inpcard.description)
+    similar_cases = await retriever_input.ainvoke(state.description)
     similar_cases = f"Here is some relevant cases for this question:\n{similar_cases}"
+    if multiapps:
+        similar_cases += MultiAPP_PROMPT
     architect = load_chat_model(configuration.architect_model).with_structured_output(InpcardContentState)
-    architect_reply = architect.invoke(
+    architect_reply = await architect.ainvoke(
         [
             SystemMessage(
                 content=SYSTEM_ARCHITECT_PROMPT.format(
-                    requirements=inpcard.description,
+                    requirements=state.description,
                     cases=similar_cases,
                 )
             ),
@@ -134,7 +130,7 @@ def architect_input_card(state: OneFileState, config: RunnableConfig):
     inpcard_code = architect_reply.inpcard
     if os.path.exists(configuration.save_dir) is False:
         os.makedirs(configuration.save_dir)
-    with open(os.path.join(configuration.save_dir, inpcard.file_name), "w", encoding="utf-8") as f:
+    with open(os.path.join(configuration.save_dir, state.file_name), "w", encoding="utf-8") as f:
         f.write(inpcard_code)
     print(f"---ARCHITECT INPUT CARD DONE---")
     return state
@@ -238,40 +234,6 @@ def review_inpcard(state: FlowState, config: RunnableConfig):
     return onefile_state
 
 
-def route_review(state: FlowState, config: RunnableConfig):
-    return Command(
-        goto=[
-            Send(
-                "modify",
-                {
-                    "inpcard": next(file for file in state["file_list"] if file.file_name == review.filename),
-                    "check": review.error,
-                    "dp_json": state["dp_json"],
-                    "review_count": state["review_count"],
-                },
-            )
-            for review in state["reviews"]
-        ]
-    )
-    return_content = []
-    for review in state["reviews"]:
-        review_name = review.filename
-        error = review.error
-        for file in state["file_list"]:
-            if review_name == file.file_name:
-                review_inpcard = file
-                break
-        onefile_state = {
-            "inpcard": review_inpcard,
-            "check": error,
-            "dp_json": state["dp_json"],
-            "review_count": state["review_count"],
-        }
-        return_content.append(Send("modify", onefile_state))
-    assert return_content != [], "No file need to be modified."
-    return Command(goto=return_content)
-
-
 def run_inpcard(state: FlowState, config: RunnableConfig):
     configuration = Configuration.from_runnable_config(config)
     """Save the generated inpcard to a file."""
@@ -330,7 +292,7 @@ architect_builder = StateGraph(FlowState)  # v, input=ArchitectInputState, outpu
 # Add the nodes
 architect_builder.add_node("align_simulation_description", align_simulation_description)
 architect_builder.add_node("human", human)
-architect_builder.add_node("architect_input_card", architect_input_card)
+# architect_builder.add_node("architect_input_card", architect_input_card)
 architect_builder.add_node("modify", modify)
 architect_builder.add_node("check_onefile", check_onefile)
 architect_builder.add_node("review_inpcard", review_inpcard)
@@ -338,7 +300,7 @@ architect_builder.add_node("run_inpcard", run_inpcard)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_edge("align_simulation_description", "human")
-architect_builder.add_edge("architect_input_card", "check_onefile")
+# architect_builder.add_edge("architect_input_card", "check_onefile")
 architect_builder.add_edge("modify", "check_onefile")
 architect_builder.add_edge("review_inpcard", "modify")
 # 修改边的定义
@@ -365,9 +327,7 @@ if __name__ == "__main__":
                 print(value)
 
     topic = """
-Three-Dimensional Porous Media Flow
-Task Description:
-A 1 m × 1 m × 1 m cubic block of soil has a water head of 5 m at the bottom and 1 m at the top, with the lateral faces impermeable. The permeability k = 10⁻⁵ m/s. Compute the steady-state flow field and pressure distribution inside the block.
+Construct a Moose multi field coupling test case to simulate the thermal structural coupling behavior of a two-dimensional rectangular thin plate. This task will use the Multiapp feature, the main application to solve heat conduction problems, where one side of the thin plate is heated while the other side remains at a low temperature; The sub application solves structural mechanics problems, fixes one side of the thin plate, and uses the temperature distribution calculated by the main application as the thermal load to analyze the thermal expansion and displacement of the thin plate. The data will be transferred from the main application to the sub applications through Moose's Transfer system to achieve coupling.
 You can make the settings a bit rougher to speed up the simulation
     """
 

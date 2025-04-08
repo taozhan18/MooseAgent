@@ -10,7 +10,7 @@ class Configuration:
     """The configurable fields for the chatbot."""
 
     # v3 is unstable in output given format
-    alignment_model: str = "huoshan/deepseek-v3-241226"
+    alignment_model: str = "huoshan/deepseek-v3-250324"
     architect_model: str = "huoshan/deepseek-r1-250120"
     assistant_model: str = "huoshan/deepseek-v3-241226"
     review_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
