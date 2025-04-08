@@ -20,7 +20,6 @@ class FlowState(TypedDict):
     feedback: str
     dp_json: dict[str, str]
     run_result: str
-    reviews: ReviewState
     review_count: int  # the number of reviews
 
 
@@ -59,12 +58,6 @@ class InpcardState(dict):
     code: str
 
 
-class ReviewState(BaseModel):
-    files: list[ReviewOneFileState] = Field(
-        description="List of input files with issues, each element in the list stores the name of the file with its error."
-    )
-
-
 class ReviewOneFileState(BaseModel):
     """
     The output state of the review agent.
@@ -74,3 +67,13 @@ class ReviewOneFileState(BaseModel):
     error: str = Field(
         description="Provide the code for the incorrect part of the input card and provide the error message for this part of the code."
     )
+
+
+class ModifyState(BaseModel):
+    """
+    The output state of the review agent.
+    """
+
+    filename: str = Field(description="The file name of the input card which has error.")
+    error: str = Field(description="Explain the reason for the error and the method of modification.")
+    code: str = Field(description="The modified code of the input card.")

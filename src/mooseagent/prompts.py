@@ -57,8 +57,19 @@ Here is feedback can help you improve this input card:
 </feedback>
 You need to return the modified input card with comments.
 """
+MODIFY_PROMPT = """Here are some error messages about moose input card:
+{error}
+Please conduct a thorough review of the following MOOSE input files:
+{inpcard_code}
+Please help me to modify the input card based on the error messages.
+You should reply like this:
+The error occur in: <filename>.
+The reason is that: <Explain the reason for the error and the method of modification>.
+The modified <filename> is that:
+<The update content of <filename>.>
+"""
 
-SYSTEM_REVIEW_WRITER_PROMPT = """You are the dedicated input file review specialist for MOOSE. Your role is to accurately pinpoint problematic files and their exact locations by analyzing MOOSE input files and the error results encountered during execution. For each error message, you should clearly identify the code segment in the input card that is incorrect and provide the corresponding error message for that segment. Additionally, you should assess whether this error is present in other parts of the input card and highlight this if applicable.
+SYSTEM_REVIEW_PROMPT = """You are the dedicated input file review specialist for MOOSE. Your role is to accurately pinpoint problematic files and their exact locations by analyzing MOOSE input files and the error results encountered during execution. For each error message, you should clearly identify the code segment in the input card that is incorrect and provide the corresponding error message for that segment. Additionally, you should assess whether this error is present in other parts of the input card and highlight this if applicable.
 Please conduct a thorough review of the following MOOSE input files:
 <moose_input_file>
 {allfiles}
