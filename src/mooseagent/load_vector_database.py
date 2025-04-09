@@ -26,28 +26,26 @@ json_file = configuration.rag_json_path
 # 用于存储已处理文档的哈希值
 processed_hashes = set()
 
-# 如果哈希文件存在，加载已有的哈希值
 HASHES_FILE = os.path.join(configuration.PERSIST_DIRECTORY, "hashes.json")
-if os.path.exists(HASHES_FILE):
-    with open(HASHES_FILE, "r") as f:
-        processed_hashes = set(json.load(f))
-else:
-    # 如果哈希文件不存在，检查向量数据库是否存在
-    if os.path.exists(configuration.PERSIST_DIRECTORY):
-        vectordb = FAISS.load_local(
-            configuration.PERSIST_DIRECTORY,
-            embedding_function,
-            allow_dangerous_deserialization=True,
-        )
+if os.path.exists(configuration.PERSIST_DIRECTORY):
+    vectordb = FAISS.load_local(
+        configuration.PERSIST_DIRECTORY,
+        embedding_function,
+        allow_dangerous_deserialization=True,
+    )
+    # 如果哈希文件存在，加载已有的哈希值
+    if os.path.exists(HASHES_FILE):
+        with open(HASHES_FILE, "r") as f:
+            processed_hashes = set(json.load(f))
+    else:
         # 假设 vectordb 中的文档内容可以被用来计算哈希
         existing_docs = vectordb.docstore._dict.values()
         for doc in existing_docs:
             # 计算现有文档的哈希值
             doc_hash = hashlib.sha256(doc.page_content.encode("utf-8")).hexdigest()
             processed_hashes.add(doc_hash)
-    else:
-        # 如果向量数据库不存在，初始化一个空的
-        vectordb = None
+else:
+    vectordb = None
 
 print("加载json文件...")
 loader = JSONLoader(file_path=json_file, jq_schema=".[]", text_content=False)
@@ -66,7 +64,7 @@ for i in tqdm(range(0, len(docs), batch_size)):
     if not filtered_batch:
         continue  # 如果批次中没有新文档，跳过
     try:
-        if i == 0 and vectordb is None:
+        if vectordb is None:
             vectordb = FAISS.from_documents(
                 documents=filtered_batch,
                 embedding=embedding_function,
