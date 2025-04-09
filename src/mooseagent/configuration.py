@@ -12,9 +12,10 @@ class Configuration:
     # v3 is unstable in output given format
     alignment_model: str = "huoshan/deepseek-v3-250324"
     architect_model: str = "huoshan/deepseek-r1-250120"
-    assistant_model: str = "huoshan/deepseek-v3-241226"
+    assistant_model: str = "huoshan/deepseek-v3-250324"
+    rearchitect_model: str = "huoshan/deepseek-v3-250324"
     review_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
-    writer_model: str = "huoshan/deepseek-r1-250120"  # Defaults to claude-3-5-sonnet-latest
+    writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-5-sonnet-latest
     extracter_model: str = "openai/gpt-4o-mini"
     embedding_function: str = "BGE_M3_EmbeddingFunction"  # "OPENAI"  or "BGE_M3_EmbeddingFunction"
 
@@ -48,7 +49,8 @@ class Configuration:
     dp_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "dp.json")
 
     # run
-    MAX_ITER: int = 10
+    MAX_ITER: int = 7
+    MAX_REARCHITECT = 3
     mpi: int = 1
 
     @classmethod

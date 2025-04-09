@@ -35,7 +35,7 @@ from mooseagent.utils import load_chat_model, check_app, combine_code_with_descr
 from mooseagent.prompts import (
     SYSTEM_ALIGNMENT_PROMPT,
     HUMAN_ALIGNMENT_PROMPT,
-    SYSTEM_REVIEW_WRITER_PROMPT,
+    SYSTEM_REVIEW_PROMPT,
     SYSTEM_ARCHITECT_PROMPT,
     SYSTEM_WRITER_PROMPT,
     MultiAPP_PROMPT,
@@ -84,9 +84,10 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
 async def human(state: FlowState, config: RunnableConfig):
     # interrupt_message = "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
     # feedback = interrupt(interrupt_message)
-    feedback = input(
-        "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
-    )
+    # feedback = input(
+    #     "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
+    # )
+    feedback = "yes"
     if feedback == "yes":
         multiapps = True if len(state["file_list"]) > 1 else False
         tasks = [architect_input_card(file, config, multiapps) for file in state["file_list"]]
@@ -165,6 +166,7 @@ def modify(state: OneFileState, config: RunnableConfig):
     ]
     helper_answer = helper.invoke({"messages": messages})
     feedback = helper_answer["messages"][-1].content
+    print(state["check"])
     writer_reply = review_writer.invoke(
         [
             SystemMessage(
@@ -197,7 +199,7 @@ def review_inpcard(state: FlowState, config: RunnableConfig):
         with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
             inpcard_code = f.read()
         all_input_cards += f"-------------------\nThe file name is: {inpcard.file_name}\nThe description of this file is:\n{inpcard.description}\nThe code of this file is: \n{inpcard_code}-------------------\n\n"
-    system_message_review = SYSTEM_REVIEW_WRITER_PROMPT.format(allfiles=all_input_cards, error=state["run_result"])
+    system_message_review = SYSTEM_REVIEW_PROMPT.format(allfiles=all_input_cards, error=state["run_result"])
 
     # Get configuration
     configuration = Configuration.from_runnable_config(config)
@@ -329,7 +331,7 @@ if __name__ == "__main__":
     topic = """
 Construct a Moose multi field coupling test case to simulate the thermal structural coupling behavior of a two-dimensional rectangular thin plate. This task will use the Multiapp feature, the main application to solve heat conduction problems, where one side of the thin plate is heated while the other side remains at a low temperature; The sub application solves structural mechanics problems, fixes one side of the thin plate, and uses the temperature distribution calculated by the main application as the thermal load to analyze the thermal expansion and displacement of the thin plate. The data will be transferred from the main application to the sub applications through Moose's Transfer system to achieve coupling.
 You can make the settings a bit rougher to speed up the simulation
-    """
+"""
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = os.path.join(run_path, f"log/{timestamp}.log")

@@ -19,8 +19,11 @@ class FlowState(TypedDict):
     file_list: ExtracterFileState  # key is the file name, value is the detailed description
     feedback: str
     dp_json: dict[str, str]
-    run_result: str
+    run_result: list[str]
+    reason: list[str]
     review_count: int  # the number of reviews
+    rearchitect_count: int
+    history_error: str
 
 
 class OneFileState(TypedDict):

@@ -39,6 +39,7 @@ from mooseagent.prompts import (
     SYSTEM_WRITER_PROMPT,
     MultiAPP_PROMPT,
     MODIFY_PROMPT,
+    REARCHITECT_PROMPT,
     # HUMAN_ARCHITECT_PROMPT,
 )
 from mooseagent.helper import bulid_helper, retriever_input
@@ -46,6 +47,7 @@ from langgraph.constants import Send
 from langgraph.types import interrupt, Command
 
 helper = bulid_helper()
+architect = bulid_helper()
 
 
 def align_simulation_description(state: FlowState, config: RunnableConfig):
@@ -81,17 +83,15 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
     return {"file_list": extracter_reply.file_list}
 
 
-async def human(state: FlowState, config: RunnableConfig):
+def human(state: FlowState, config: RunnableConfig):
     # interrupt_message = "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
     # feedback = interrupt(interrupt_message)
-    feedback = input(
-        "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
-    )
+    feedback = "yes"
+    # feedback = input(
+    #     "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
+    # )
     if feedback == "yes":
-        multiapps = True if len(state["file_list"]) > 1 else False
-        tasks = [architect_input_card(file, config, multiapps) for file in state["file_list"]]
-        await asyncio.gather(*tasks)
-        return Command(goto="run_inpcard", update=state)
+        return Command(goto="architect", update=state)
     # If the user provides feedback, regenerate the report plan
     elif isinstance(feedback, str):
         # Treat this as feedback
@@ -100,7 +100,19 @@ async def human(state: FlowState, config: RunnableConfig):
         raise TypeError(f"Interrupt value of type {type(feedback)} is not supported.")
 
 
-async def architect_input_card(state: FileState, config: RunnableConfig, multiapps: bool = False):
+async def architect_all(state: FlowState, config: RunnableConfig):
+    rearchitect_count = state.get("rearchitect_count", 0) + 1
+    print(f"-----ARCHITECT_{rearchitect_count}-----")
+    history_error = state.get("history_error", "")
+    multiapps = True if len(state["file_list"]) > 1 else False
+    tasks = [architect_input_card(file, config, multiapps, history_error) for file in state["file_list"]]
+    await asyncio.gather(*tasks)
+    return {"rearchitect_count": rearchitect_count}
+
+
+async def architect_input_card(
+    state: FileState, config: RunnableConfig, multiapps: bool = False, history_error: str = ""
+):
     """Generate the architect of the input card
     Args:
         state (OneFileState): The current state of the conversation.
@@ -115,13 +127,12 @@ async def architect_input_card(state: FileState, config: RunnableConfig, multiap
     similar_cases = f"Here is some relevant cases for this question:\n{similar_cases}"
     if multiapps:
         similar_cases += MultiAPP_PROMPT
-    architect = load_chat_model(configuration.architect_model).with_structured_output(InpcardContentState)
+    # architect = load_chat_model(configuration.architect_model).with_structured_output(InpcardContentState)
     architect_reply = await architect.ainvoke(
         [
             SystemMessage(
                 content=SYSTEM_ARCHITECT_PROMPT.format(
-                    requirements=state.description,
-                    cases=similar_cases,
+                    requirements=state.description, cases=similar_cases, history_error=history_error
                 )
             ),
             # HumanMessage(content=human_message_architect),
@@ -136,20 +147,6 @@ async def architect_input_card(state: FileState, config: RunnableConfig, multiap
     return state
 
 
-def check_onefile(state: FlowState, config: RunnableConfig):
-    configuration = Configuration.from_runnable_config(config)
-    all_input_cards = ""
-    for inpcard in state["file_list"]:
-        with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
-            inpcard_code = f.read()
-        all_input_cards += f"-------------------\nThe file name is: {inpcard.file_name}\nThe description of this file is:\n{inpcard.description}\nThe code of this file is: \n{inpcard_code}-------------------\n\n"
-    check = check_app(all_input_cards, state["dp_json"])
-    if check != "":
-        return Command(goto="modify", update={"run_result": check, "review_count": state.get("review_count", 0)})
-    else:
-        return Command(goto="run_inpcard", update={"review_count": state.get("review_count", 0)})
-
-
 def modify(state: FlowState, config: RunnableConfig):
     review_count = state.get("review_count", 0) + 1
     print(f"---REWRITE INPCARD---{review_count}")
@@ -159,13 +156,13 @@ def modify(state: FlowState, config: RunnableConfig):
         with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
             inpcard_code = f.read()
         all_input_cards += f"-------------------\nThe file name is: {inpcard.file_name}\nThe description of this file is:\n{inpcard.description}\nThe code of this file is: \n{inpcard_code}-------------------\n\n"
-
+    state["run_result"][-1] = state["run_result"][-1] + "\n" + check_app(all_input_cards, state["dp_json"])
     messages = [
         {
             "role": "user",
             "content": MODIFY_PROMPT.format(
                 inpcard_code=all_input_cards,
-                error=state["run_result"],
+                error=state["run_result"][-1],
             ),
         }
     ]
@@ -181,11 +178,13 @@ def modify(state: FlowState, config: RunnableConfig):
         ]
     )
     print(f"The error in file: {extracter_reply.filename}. The reason is that: {extracter_reply.error}")
+    reason = state.get("reason", [])
+    reason.append(extracter_reply.error)
     inpcard_code = extracter_reply.code
     with open(os.path.join(configuration.save_dir, extracter_reply.filename), "w", encoding="utf-8") as f:
         f.write(extracter_reply.code)
     print(f"---REWRITE INPCARD DONE---")
-    return state
+    return {"review_count": review_count, "run_result": state["run_result"], "reason": reason}
 
 
 def run_inpcard(state: FlowState, config: RunnableConfig):
@@ -210,34 +209,34 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
         # 打印输出
         if result.stderr == "":
             print(f"SUCCESS:\n{result.stdout}")
-            return {"run_result": "success"}
+            return Command(goto="End", update=state)
         else:
             print(f"ERROR:\n{result.stderr}")
             if review_count < configuration.MAX_ITER:
-                return {"run_result": result.stderr}
+                run_result = state.get("run_result", [])
+                run_result.append(result.stderr)
+                return Command(goto="modify", update={"run_result": run_result})
+            if state["rearchitect_count"] < configuration.MAX_REARCHITECT:
+                print("retry")
+                rearchitect = load_chat_model(configuration.rearchitect_model)
+                rearchitect_reply = rearchitect.invoke(
+                    [SystemMessage(content=REARCHITECT_PROMPT.format(errors=state["run_result"]))]
+                )
+                return Command(
+                    goto="architect",
+                    update={
+                        "review_count": 0,
+                        "run_result": [],
+                        "history_error": rearchitect_reply.content,
+                        "reason": [],
+                    },
+                )
             else:
-                return {"run_result": "MAX_ITER"}
+                print("Up to max iteration.")
+                return Command(goto="End")
     else:
         print(f"Moose directory {configuration.MOOSE_DIR} does not exist.")
-        return {"run_result": "success"}
-
-
-def route_run_inpcard(state: FlowState):
-    """Determine the next node based on the model's output.
-
-    This function checks if the model's last message contains tool calls.
-
-    Args:
-        state (State): The current state of the conversation.
-    """
-    if state["run_result"] == "success":
-        print("The simulation task is completed successfully.")
-        return "success"
-    elif state["run_result"] == "MAX_ITER":
-        print("Up to max iteration.")
-        return "success"
-    else:
-        return "fail"
+        return Command(goto="End")
 
 
 # Build workflow
@@ -246,22 +245,14 @@ architect_builder = StateGraph(FlowState)  # v, input=ArchitectInputState, outpu
 # Add the nodes
 architect_builder.add_node("align_simulation_description", align_simulation_description)
 architect_builder.add_node("human", human)
+architect_builder.add_node("architect", architect_all)
 architect_builder.add_node("modify", modify)
-architect_builder.add_node("check_onefile", check_onefile)
 architect_builder.add_node("run_inpcard", run_inpcard)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_edge("align_simulation_description", "human")
-architect_builder.add_edge("modify", "check_onefile")
-# 修改边的定义
-architect_builder.add_conditional_edges(
-    "run_inpcard",
-    route_run_inpcard,
-    {  # Name returned by route_joke : Name of next node to visit
-        "success": END,
-        "fail": "modify",
-    },
-)
+architect_builder.add_edge("architect", "run_inpcard")
+architect_builder.add_edge("modify", "run_inpcard")
 # architect_builder.add_conditional_edges("review_inpcard", route_review, ["modify"])
 memory = MemorySaver()
 graph = architect_builder.compile(checkpointer=memory)
@@ -278,16 +269,23 @@ if __name__ == "__main__":
 
     topic = """
 Construct a Moose multi field coupling test case to simulate the thermal structural coupling behavior of a two-dimensional rectangular thin plate. This task will use the Multiapp feature, the main application to solve heat conduction problems, where one side of the thin plate is heated while the other side remains at a low temperature; The sub application solves structural mechanics problems, fixes one side of the thin plate, and uses the temperature distribution calculated by the main application as the thermal load to analyze the thermal expansion and displacement of the thin plate. The data will be transferred from the main application to the sub applications through Moose's Transfer system to achieve coupling.
+
+
 You can make the settings a bit rougher to speed up the simulation
     """
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = os.path.join(run_path, f"log/{timestamp}.log")
     sys.stdout = Logger(output_file)
-
+    configuration = Configuration.from_runnable_config(RunnableConfig())
     with get_openai_callback() as cb:
         # 运行异步主程序
-        asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))
+        result = asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))
+        code_length = 0
+        for file in result["file_list"]:
+            with open(os.path.join(configuration.save_dir, file.file_name), "r") as f:
+                code_length += len(f.read())
+        print(code_length)
         print("===== Token Usage =====")
         print("Prompt Tokens:", cb.prompt_tokens)
         print("Completion Tokens:", cb.completion_tokens)

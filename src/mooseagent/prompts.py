@@ -36,7 +36,11 @@ In addition, to better complete the task, please carefully review the following 
 <Relevant cases>
 {cases}
 </Relevant cases>
-You need to return the annotated input card. Please note that if the requirements involve "MultiApp" and "Transfers", the specified variable names or file names in these sections should be used.
+This is a previous erroneous experience, and you need to determine whether it is relevant to this task. If so, please consider using other methods to avoid such errors from happening again (if any):
+<history error>
+{history_error}
+</history error>
+You need to return the annotated input card. Please note that if the requirements involve "MultiApp" and "Transfers", the specified variable names or file names in these sections should be used. Please check that each module or APP is necessary for simulation. Please check syntax, ensure that each module has a termination symbol.
 """
 
 SYSTEM_HELPER_PROMPT = """You are a helper for the MOOSE simulation task. Your task is to provide assistance to the user in completing the simulation task. You need to provide detailed and comprehensive information to help the user understand the simulation requirements and complete the simulation task. You should provide deterministic and quantitative descriptions to avoid vague statements.
@@ -82,6 +86,12 @@ Your response should be formatted as follows (list all errors for a file, ensuri
 filename: The file name of the input card which has error.
 error: Provide the code for the incorrect part of the input card and provide the error message for this part of the
 ...
+"""
+REARCHITECT_PROMPT = """You are an expert in handling MOOSE errors. The following are historical error messages and corresponding proposed solutions:
+<Historical Error and solution Information>
+{errors}
+<Historical Error and solution Information>
+Please carefully read the above information and point out the reasons why the error persists.
 """
 
 MultiAPP_PROMPT = """
@@ -179,7 +189,7 @@ The sub-card of heat conduction in the solid domain is neutron.i. The boundary f
   []
 []
 
-The sub-card of neutron diffusion in solid and fluid domains is fluid.i. Accept the fluid temperature of the daughter card and transfer the solid boundary heat flux to it. Partial code of neutron.i is as follows:
+The sub-card of neutron diffusion in solid and fluid domains is fluid.i. Accept the fluid temperature of the sub card and transfer the solid boundary heat flux to it. Partial code of neutron.i is as follows:
 [Variables]
   [u]
   []
