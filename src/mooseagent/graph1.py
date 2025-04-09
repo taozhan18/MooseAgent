@@ -123,21 +123,13 @@ async def architect_input_card(
     # inpcard = state["inpcard"]
     configuration = Configuration.from_runnable_config(config)
     print(f"---ARCHITECT INPUT CARD---")  #
-    similar_cases = await retriever_input.ainvoke(state.description)
-    similar_cases = f"Here is some relevant cases for this question:\n{similar_cases}"
-    if multiapps:
-        similar_cases += MultiAPP_PROMPT
-    # architect = load_chat_model(configuration.architect_model).with_structured_output(InpcardContentState)
-    architect_reply = await architect.ainvoke(
-        [
-            SystemMessage(
-                content=SYSTEM_ARCHITECT_PROMPT.format(
-                    requirements=state.description, cases=similar_cases, history_error=history_error
-                )
-            ),
-            # HumanMessage(content=human_message_architect),
-        ]
-    )
+    messages = [
+        {
+            "role": "user",
+            "content": SYSTEM_ARCHITECT_PROMPT.format(requirements=state.description, history_error=history_error),
+        }
+    ]
+    architect_reply = await architect.ainvoke({"messages": messages})
     inpcard_code = architect_reply.inpcard
     if os.path.exists(configuration.save_dir) is False:
         os.makedirs(configuration.save_dir)

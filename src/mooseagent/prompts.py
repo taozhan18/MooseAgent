@@ -32,10 +32,6 @@ Before starting to create the input file, please carefully read the specific req
 <Simulation Task Requirements>
 {requirements}
 </Simulation Task Requirements>
-In addition, to better complete the task, please carefully review the following relevant MOOSE simulation examples, and refer to their content as much as possible:
-<Relevant cases>
-{cases}
-</Relevant cases>
 This is a previous erroneous experience, and you need to determine whether it is relevant to this task. If so, please consider using other methods to avoid such errors from happening again (if any):
 <history error>
 {history_error}
