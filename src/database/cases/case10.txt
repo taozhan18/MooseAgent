@@ -1,0 +1,120 @@
+# Simulation Task Description: 2D Phase-Field Fracture Simulation in an Elastic Solid
+
+## 1. Simulation Objective
+Simulate the crack propagation process in a 2D elastic solid under tensile loading using the Phase Field Method.
+
+## 2. Material Parameters
+- Elastic modulus \( E = 2.1 \times 10^5 \) MPa
+- Poisson's ratio \( \nu = 0.3 \)
+- Bulk modulus \( K \) and shear modulus \( G \) are calculated from:
+  - \( K = \frac{E}{3(1-2\nu)} \)
+  - \( G = \frac{E}{2(1+\nu)} \)
+- Fracture parameters:
+  - Fracture toughness \( G_c = 2.7 \) N/m
+  - Critical energy release rate \( \psi_c = 14.88 \) J/m²
+  - Regularization length \( l = 0.02 \) m
+
+## 3. Geometry and Mesh
+- The model consists of two symmetric parts, each with dimensions \( 1 \times 0.5 \) m.
+- Meshing:
+  - Each part is divided into 30 elements along the x-axis and 15 elements along the y-axis.
+  - The top and bottom boundaries are named `top_half_top` and `bottom_half_bottom`, respectively.
+  - The left and right boundaries are named `top_half_left` and `top_half_right`, respectively.
+  - The middle stitching boundaries are named `top_stitch` and `bottom_stitch`.
+
+## 4. Adaptive Mesh Refinement
+- Adaptive mesh refinement is performed using the OrientedBoxMarker.
+- Refinement region center coordinates: \( (0.65, -0.25, 0) \)
+- Refinement region dimensions: length 0.8m, width 0.2m, height 1m.
+- Length direction vector: \( (1, -1.5, 0) \)
+- Width direction vector: \( (1.5, 1, 0) \)
+- Initial refinement steps: 2
+- Maximum refinement level: 2
+
+## 5. Variables
+- Displacement variables:
+  - `disp_x` (displacement in the x-direction)
+  - `disp_y` (displacement in the y-direction)
+- Auxiliary variables:
+  - `fx` (nodal force in the x-direction)
+  - `d` (phase field variable)
+- Crack propagation variable:
+  - `d` (range 0-1, indicating crack opening state)
+
+## 6. Boundary Conditions
+- Displacement boundary conditions:
+  - Top boundary (`top_half_top`): Apply time-dependent x-direction displacement \( u_x = t \)
+  - Bottom boundary (`bottom_half_bottom`): Fix x-direction displacement \( u_x = 0 \)
+  - All other boundaries: Fix y-direction displacement \( u_y = 0 \)
+
+## 7. Material Model
+### 7.1 Elastic Constitutive Relationship
+- Small deformation isotropic elasticity model is used.
+- Bulk modulus \( K \) and shear modulus \( G \) are calculated from material parameters.
+- The phase field variable \( d \) is used to control material stiffness degradation.
+
+### 7.2 Crack Geometric Function
+- Expression: \( \alpha = d \)
+
+### 7.3 Degradation Function
+- Expression:
+  \[
+  g = \frac{(1-d)^p}{(1-d)^p + \frac{G_c}{\psi_c} \frac{\xi}{c_0 l} d(1 + a_2 d + a_2 a_3 d^2)} (1-\eta) + \eta
+  \]
+- Parameters:
+  - \( p = 2 \)
+  - \( a_2 = -0.5 \)
+  - \( a_3 = 0 \)
+  - \( \eta = 1e-6 \)
+
+## 8. Postprocessing
+- Nodal force calculation:
+  - Calculate the total x-direction nodal force on the top boundary (`top_half_top`)
+
+## 9. Solver Settings
+- Solver type: Transient
+- Solution method: Newton (NEWTON)
+- Linear solver: LU decomposition, using SuperLU_DIST
+- Convergence criteria:
+  - Nonlinear relative tolerance: \( 1e-8 \)
+  - Nonlinear absolute tolerance: \( 1e-10 \)
+- Time step: \( \Delta t = 2e-5 \)
+- End time: \( t_{end} = 2e-2 \)
+
+## 10. Phase-Field Fracture (fracture.i)
+### 10.1 Variables
+- Phase field variable: `d`
+
+### 10.2 Boundary Conditions
+- Irreversibility constraint: The phase field variable can only increase.
+- Upper bound constraint: The maximum value of the phase field variable is 1.
+
+### 10.3 Diffusion Term
+- Expression:
+  \[
+  \nabla \cdot \left( \frac{G_c l}{c_0} \nabla d \right)
+  \]
+
+### 10.4 Source Term
+- Expression:
+  \[
+  \frac{\partial \psi}{\partial d}
+  \]
+
+### 10.5 Fracture Energy Density
+- Expression:
+  \[
+  \psi = \alpha \frac{G_c}{c_0 l} + g \psi_{active}
+  \]
+
+## 11. Multi-Application Coupling (MultiApps)
+- The main application and the sub-application `fracture` exchange data through the variables `d` and `psie_active`.
+- The sub-application executes at the end of each time step (TIMESTEP_END).
+
+## 12. Output Settings
+- Output format: Exodus II
+- Output content:
+  - Displacement field
+  - Stress field
+  - Strain field
+  - Phase field variable
