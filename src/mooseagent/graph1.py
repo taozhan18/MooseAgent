@@ -29,6 +29,8 @@ from mooseagent.state import (
     ExtracterFileState,
     InpcardContentState,
     ModifyState,
+    RearchitechState,
+    QueryState,
 )
 from mooseagent.utils import load_chat_model, check_app, combine_code_with_description, Logger
 from mooseagent.prompts import (
@@ -40,14 +42,15 @@ from mooseagent.prompts import (
     MultiAPP_PROMPT,
     MODIFY_PROMPT,
     REARCHITECT_PROMPT,
+    SYSTEM_QUERY_PROMPT,
     # HUMAN_ARCHITECT_PROMPT,
 )
 from mooseagent.helper import bulid_helper, retriever_input
 from langgraph.constants import Send
 from langgraph.types import interrupt, Command
 
-helper = bulid_helper()
-architect = bulid_helper()
+configuration = Configuration.from_runnable_config(RunnableConfig())
+helper = bulid_helper(configuration.assistant_model)
 
 
 def align_simulation_description(state: FlowState, config: RunnableConfig):
@@ -123,13 +126,30 @@ async def architect_input_card(
     # inpcard = state["inpcard"]
     configuration = Configuration.from_runnable_config(config)
     print(f"---ARCHITECT INPUT CARD---")  #
-    messages = [
-        {
-            "role": "user",
-            "content": SYSTEM_ARCHITECT_PROMPT.format(requirements=state.description, history_error=history_error),
-        }
-    ]
-    architect_reply = await architect.ainvoke({"messages": messages})
+    # generate query
+    queryllm = load_chat_model(configuration.query_model)  # .with_structured_output(QueryState)
+    query_reply = await queryllm.ainvoke(
+        [
+            SystemMessage(content=SYSTEM_QUERY_PROMPT.format(requirements=state.description)),
+        ]
+    )
+
+    similar_cases = await retriever_input.ainvoke(query_reply.content)
+    similar_cases = f"Here is some relevant cases for this question:\n{similar_cases}"
+    if multiapps:
+        similar_cases += MultiAPP_PROMPT
+    # architect
+    architect = load_chat_model(configuration.architect_model).with_structured_output(InpcardContentState)
+    architect_reply = await architect.ainvoke(
+        [
+            SystemMessage(
+                content=SYSTEM_ARCHITECT_PROMPT.format(
+                    requirements=state.description, cases=similar_cases, history_error=history_error
+                )
+            ),
+            # HumanMessage(content=human_message_architect),
+        ]
+    )
     inpcard_code = architect_reply.inpcard
     if os.path.exists(configuration.save_dir) is False:
         os.makedirs(configuration.save_dir)
@@ -204,25 +224,29 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
             return Command(goto="End", update=state)
         else:
             print(f"ERROR:\n{result.stderr}")
+            run_result = state.get("run_result", [])
+            run_result.append(result.stderr)
             if review_count < configuration.MAX_ITER:
-                run_result = state.get("run_result", [])
-                run_result.append(result.stderr)
                 return Command(goto="modify", update={"run_result": run_result})
             if state["rearchitect_count"] < configuration.MAX_REARCHITECT:
-                print("retry")
-                rearchitect = load_chat_model(configuration.rearchitect_model)
-                rearchitect_reply = rearchitect.invoke(
-                    [SystemMessage(content=REARCHITECT_PROMPT.format(errors=state["run_result"]))]
+                rearchitect = load_chat_model(configuration.rearchitect_model).with_structured_output(RearchitechState)
+                feedback = rearchitect.invoke(
+                    [SystemMessage(content=REARCHITECT_PROMPT.format(Error=state["run_result"][-5:]))]
                 )
-                return Command(
-                    goto="architect",
-                    update={
-                        "review_count": 0,
-                        "run_result": [],
-                        "history_error": rearchitect_reply.content,
-                        "reason": [],
-                    },
-                )
+                if "True" in feedback.rearchitect:
+                    print("retry")
+                    return Command(
+                        goto="architect",
+                        update={
+                            "review_count": 0,
+                            "run_result": [],
+                            "history_error": feedback.error,
+                            "reason": [],
+                        },
+                    )
+                else:
+                    print("try to modify again!")
+                    return Command(goto="modify", update={"run_result": run_result, "review_count": review_count - 1})
             else:
                 print("Up to max iteration.")
                 return Command(goto="End")
@@ -260,8 +284,9 @@ if __name__ == "__main__":
                 print(value)
 
     topic = """
-Construct a Moose multi field coupling test case to simulate the thermal structural coupling behavior of a two-dimensional rectangular thin plate. This task will use the Multiapp feature, the main application to solve heat conduction problems, where one side of the thin plate is heated while the other side remains at a low temperature; The sub application solves structural mechanics problems, fixes one side of the thin plate, and uses the temperature distribution calculated by the main application as the thermal load to analyze the thermal expansion and displacement of the thin plate. The data will be transferred from the main application to the sub applications through Moose's Transfer system to achieve coupling.
-
+Two-Dimensional Nonlinear Material Mechanics
+Task Description:
+A 1 m × 1 m square plate is fixed on the left edge and subjected to a prescribed horizontal displacement Δx = 0.01 m on the right edge. The material has elastic-plastic behavior with a bilinear hardening model: yield stress σy = 250 MPa, Young’s modulus E = 210 GPa, and hardening modulus H = 1 GPa. Output the final plastic strain distribution and identify the plastic zone.
 
 You can make the settings a bit rougher to speed up the simulation
     """
@@ -269,7 +294,7 @@ You can make the settings a bit rougher to speed up the simulation
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = os.path.join(run_path, f"log/{timestamp}.log")
     sys.stdout = Logger(output_file)
-    configuration = Configuration.from_runnable_config(RunnableConfig())
+    subprocess.run(["rm", "-r", configuration.save_dir])
     with get_openai_callback() as cb:
         # 运行异步主程序
         result = asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))

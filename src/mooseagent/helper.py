@@ -63,12 +63,11 @@ configuration = Configuration.from_runnable_config(config)
 sys_msg = """You are a knowledgeable assistant specializing in Finite Element Method (FEM) software, particularly in MOOSE simulation. Your mission is to locate and provide relevant information on input parameters, techniques, and best practices to ensure accurate and efficient simulations."""
 
 
-def helper(state: State):
-    llm = load_chat_model(configuration.assistant_model).bind_tools(tools)
-    return {"messages": [llm.invoke([sys_msg] + state["messages"])]}
+def bulid_helper(model: str):
+    def helper(state: State):
+        llm = load_chat_model(model).bind_tools(tools)
+        return {"messages": [llm.invoke([sys_msg] + state["messages"])]}
 
-
-def bulid_helper():
     graph_builder = StateGraph(State)
     graph_builder.add_node("helper", helper)
     tool_node = ToolNode(tools=tools)

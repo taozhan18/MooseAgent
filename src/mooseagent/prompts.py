@@ -26,7 +26,19 @@ File_name2: Write the file name.
 Description: Write the detailed description of the file.
 ...
 """
+SYSTEM_QUERY_PROMPT = """
+You are an expert in using the finite element software MOOSE. Your task is to generate search content based on the simulation requirements provided by the user, so as to find similar simulation cases from the database.
 
+Here are the specific simulation requirements:
+<Simulation Requirements>
+{requirements}
+</Simulation Requirements>
+
+When generating the search content, please follow the following methods:
+1. Carefully analyze the key information in the simulation requirements, including but not limited to physical phenomena, material properties, geometric shapes, boundary conditions, etc.
+2. Organize and refine these key pieces of information to form concise and clear search keywords or phrases.
+3. Avoid including overly specific or unique details to ensure that a broader range of similar cases can be found.
+"""
 SYSTEM_ARCHITECT_PROMPT = """Please create a MOOSE input file structure based on the user's requirements and output an input file with detailed comments. Typically, a MOOSE input file consists of the following core modules: Mesh, Variables, Kernels, BCs, Executor, and Outputs. In addition, there are several optional modules available for selection, such as Global Parameters, Materials, Auxiliary Variables, Auxiliary Kernels, Integrated Circuits, Transfers, Functions, MultiApps, Preprocessing, etc. When creating the input file, please avoid introducing modules or applications that do not exist in the MOOSE framework.
 Before starting to create the input file, please carefully read the specific requirements of the simulation task below:
 <Simulation Task Requirements>
@@ -64,7 +76,7 @@ Please conduct a thorough review of the following MOOSE input files:
 Please help me to modify the input card based on the error messages.
 You should reply like this:
 The error occur in: <filename>.
-The reason is that: <Explain the reason for the error and the method of modification>.
+The error and reason is that: <Provide the original error message, explain the reason for the error and the method of modification>.
 The modified <filename> is that:
 <The update content of <filename>.>
 """
@@ -83,11 +95,18 @@ filename: The file name of the input card which has error.
 error: Provide the code for the incorrect part of the input card and provide the error message for this part of the
 ...
 """
-REARCHITECT_PROMPT = """You are an expert in handling MOOSE errors. The following are historical error messages and corresponding proposed solutions:
-<Historical Error and solution Information>
-{errors}
-<Historical Error and solution Information>
-Please carefully read the above information and point out the reasons why the error persists.
+REARCHITECT_PROMPT = """You are an expert in handling MOOSE errors. At present, after multiple iterations, the problem has not been solved. The following are historical error messages and corresponding suggested solutions:
+<Historical Errors and Solution Information>
+{Error}
+<Historical Errors and Solution Information>
+Please read the above information carefully. If you find that the above information keeps repeating an error, please reply with True, pointing out the error and indicating the reason why the error persists. If the error type is different every time, continuing to modify may solve the problem. Please reply with False.
+"""
+
+SUGGESTION_PROMPT = """
+这是构建MOOSE输入卡的一些经验：
+1.如果APP的默认参数为no_default, 一般无需设置这个参数。
+2.Multiapps和Transfer一般同时出现。
+3.
 """
 
 MultiAPP_PROMPT = """

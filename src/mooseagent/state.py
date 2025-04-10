@@ -78,5 +78,24 @@ class ModifyState(BaseModel):
     """
 
     filename: str = Field(description="The file name of the input card which has error.")
-    error: str = Field(description="Explain the reason for the error and the method of modification.")
+    error: str = Field(
+        description="Provide the original error message, explain the reason for the error and the method of modification."
+    )
     code: str = Field(description="The modified code of the input card.")
+
+
+class QueryState(BaseModel):
+    query: str = Field(description="The query to search for relevant information.")
+
+
+class RearchitechState(BaseModel):
+    """_summary_
+
+    Args:
+        BaseModel (_type_): _description_
+    """
+
+    rearchitect: str = Field(
+        description="If you find that the above information keeps repeating an error, please reply with True, else reply False"
+    )
+    error: str = Field(description="point out the error and indicate the reason why the error persists")
