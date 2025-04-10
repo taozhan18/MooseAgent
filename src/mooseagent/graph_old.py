@@ -26,11 +26,10 @@ from mooseagent.configuration import Configuration
 from mooseagent.state import (
     FlowState,
     FileState,
+    ReviewOneFileState,
+    OneFileState,
     ExtracterFileState,
     InpcardContentState,
-    ModifyState,
-    RearchitechState,
-    QueryState,
 )
 from mooseagent.utils import load_chat_model, check_app, combine_code_with_description, Logger
 from mooseagent.prompts import (
@@ -40,17 +39,13 @@ from mooseagent.prompts import (
     SYSTEM_ARCHITECT_PROMPT,
     SYSTEM_WRITER_PROMPT,
     MultiAPP_PROMPT,
-    MODIFY_PROMPT,
-    REARCHITECT_PROMPT,
-    SYSTEM_QUERY_PROMPT,
     # HUMAN_ARCHITECT_PROMPT,
 )
 from mooseagent.helper import bulid_helper, retriever_input
 from langgraph.constants import Send
 from langgraph.types import interrupt, Command
 
-configuration = Configuration.from_runnable_config(RunnableConfig())
-helper = bulid_helper(configuration.assistant_model)
+helper = bulid_helper()
 
 
 def align_simulation_description(state: FlowState, config: RunnableConfig):
@@ -86,15 +81,18 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
     return {"file_list": extracter_reply.file_list}
 
 
-def human(state: FlowState, config: RunnableConfig):
+async def human(state: FlowState, config: RunnableConfig):
     # interrupt_message = "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
     # feedback = interrupt(interrupt_message)
-    feedback = "yes"
     # feedback = input(
     #     "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
     # )
+    feedback = "yes"
     if feedback == "yes":
-        return Command(goto="architect", update=state)
+        multiapps = True if len(state["file_list"]) > 1 else False
+        tasks = [architect_input_card(file, config, multiapps) for file in state["file_list"]]
+        await asyncio.gather(*tasks)
+        return Command(goto="run_inpcard", update=state)
     # If the user provides feedback, regenerate the report plan
     elif isinstance(feedback, str):
         # Treat this as feedback
@@ -103,19 +101,7 @@ def human(state: FlowState, config: RunnableConfig):
         raise TypeError(f"Interrupt value of type {type(feedback)} is not supported.")
 
 
-async def architect_all(state: FlowState, config: RunnableConfig):
-    rearchitect_count = state.get("rearchitect_count", 0) + 1
-    print(f"-----ARCHITECT_{rearchitect_count}-----")
-    history_error = state.get("history_error", "")
-    multiapps = True if len(state["file_list"]) > 1 else False
-    tasks = [architect_input_card(file, config, multiapps, history_error) for file in state["file_list"]]
-    await asyncio.gather(*tasks)
-    return {"rearchitect_count": rearchitect_count}
-
-
-async def architect_input_card(
-    state: FileState, config: RunnableConfig, multiapps: bool = False, history_error: str = ""
-):
+async def architect_input_card(state: FileState, config: RunnableConfig, multiapps: bool = False):
     """Generate the architect of the input card
     Args:
         state (OneFileState): The current state of the conversation.
@@ -126,25 +112,17 @@ async def architect_input_card(
     # inpcard = state["inpcard"]
     configuration = Configuration.from_runnable_config(config)
     print(f"---ARCHITECT INPUT CARD---")  #
-    # generate query
-    queryllm = load_chat_model(configuration.query_model)  # .with_structured_output(QueryState)
-    query_reply = await queryllm.ainvoke(
-        [
-            SystemMessage(content=SYSTEM_QUERY_PROMPT.format(requirements=state.description)),
-        ]
-    )
-
-    similar_cases = await retriever_input.ainvoke(query_reply.content)
+    similar_cases = await retriever_input.ainvoke(state.description)
     similar_cases = f"Here is some relevant cases for this question:\n{similar_cases}"
     if multiapps:
         similar_cases += MultiAPP_PROMPT
-    # architect
     architect = load_chat_model(configuration.architect_model).with_structured_output(InpcardContentState)
     architect_reply = await architect.ainvoke(
         [
             SystemMessage(
                 content=SYSTEM_ARCHITECT_PROMPT.format(
-                    requirements=state.description, cases=similar_cases, history_error=history_error
+                    requirements=state.description,
+                    cases=similar_cases,
                 )
             ),
             # HumanMessage(content=human_message_architect),
@@ -159,44 +137,103 @@ async def architect_input_card(
     return state
 
 
-def modify(state: FlowState, config: RunnableConfig):
+def check_onefile(state: OneFileState, config: RunnableConfig):
+    configuration = Configuration.from_runnable_config(config)
+    inpcard = state["inpcard"]
+    with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
+        inpcard_code = f.read()
+    check = check_app(inpcard_code, state["dp_json"])
+    if check != "":
+        return Command(goto="modify", update={"check": check, "review_count": state.get("review_count", 0)})
+    else:
+        return Command(goto="run_inpcard", update={"review_count": state.get("review_count", 0)})
+
+
+def modify(state: OneFileState, config: RunnableConfig):
+    print(f"---RERITE INPCARD---")
+    inpcard = state["inpcard"]
+    configuration = Configuration.from_runnable_config(config)
+    with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
+        inpcard_code = f.read()
+    # print(f"---PRELIMINARY REVIEW INPUT FILE---")  #
+    review_writer = load_chat_model(configuration.writer_model).with_structured_output(InpcardContentState)
+
+    messages = [
+        {
+            "role": "user",
+            "content": f"Here are some error messages about moose input card: \n{state["check"]}\nThe input card is:\n{inpcard_code}\n",
+        }
+    ]
+    helper_answer = helper.invoke({"messages": messages})
+    feedback = helper_answer["messages"][-1].content
+    print(state["check"])
+    writer_reply = review_writer.invoke(
+        [
+            SystemMessage(
+                content=SYSTEM_WRITER_PROMPT.format(input_card=inpcard_code, feedback=feedback, error=state["check"])
+            )
+        ]
+    )
+    inpcard_code = writer_reply.inpcard
+    with open(os.path.join(configuration.save_dir, inpcard.file_name), "w", encoding="utf-8") as f:
+        f.write(inpcard_code)
+    print(f"---RERITE INPCARD DONE---")
+    return state
+
+
+def review_inpcard(state: FlowState, config: RunnableConfig):
+    """Review the generated inpcard for quality and completeness.
+
+    Args:
+        state (InpcardState): The current state of the inpcard.
+        config (RunnableConfig): Configuration for the model run.
+
+    Returns:
+        dict: A dictionary containing the review results.
+    """
     review_count = state.get("review_count", 0) + 1
-    print(f"---REWRITE INPCARD---{review_count}")
+    print(f"---REVIEW INPCARD---{review_count}")
     configuration = Configuration.from_runnable_config(config)
     all_input_cards = ""
     for inpcard in state["file_list"]:
         with open(os.path.join(configuration.save_dir, inpcard.file_name), "r", encoding="utf-8") as f:
             inpcard_code = f.read()
         all_input_cards += f"-------------------\nThe file name is: {inpcard.file_name}\nThe description of this file is:\n{inpcard.description}\nThe code of this file is: \n{inpcard_code}-------------------\n\n"
-    state["run_result"][-1] = state["run_result"][-1] + "\n" + check_app(all_input_cards, state["dp_json"])
-    messages = [
-        {
-            "role": "user",
-            "content": MODIFY_PROMPT.format(
-                inpcard_code=all_input_cards,
-                error=state["run_result"][-1],
-            ),
-        }
-    ]
-    helper_answer = helper.invoke({"messages": messages})
-    feedback = helper_answer["messages"][-1].content
-    extracter_review = load_chat_model(configuration.extracter_model).with_structured_output(ModifyState)
-    extracter_reply = extracter_review.invoke(
+    system_message_review = SYSTEM_REVIEW_PROMPT.format(allfiles=all_input_cards, error=state["run_result"])
+
+    # Get configuration
+    configuration = Configuration.from_runnable_config(config)
+    review_writer = load_chat_model(configuration.review_model).with_structured_output(ReviewOneFileState)
+    review_reply = review_writer.invoke(
         [
-            SystemMessage(
-                content="You are a helpful assistant that can extract file name, error information and the modified code.  You should never change the origin information."
-            ),
-            HumanMessage(content=feedback),
+            SystemMessage(content=system_message_review),
         ]
     )
-    print(f"The error in file: {extracter_reply.filename}. The reason is that: {extracter_reply.error}")
-    reason = state.get("reason", [])
-    reason.append(extracter_reply.error)
-    inpcard_code = extracter_reply.code
-    with open(os.path.join(configuration.save_dir, extracter_reply.filename), "w", encoding="utf-8") as f:
-        f.write(extracter_reply.code)
-    print(f"---REWRITE INPCARD DONE---")
-    return {"review_count": review_count, "run_result": state["run_result"], "reason": reason}
+    # extracter_review = load_chat_model(configuration.extracter_model).with_structured_output(ReviewState)
+    # extracter_reply = extracter_review.invoke(
+    #     [
+    #         SystemMessage(
+    #             content="You are a helpful assistant that can extract a list of file name and its error information.  You should never change the file name and its error information."
+    #         ),
+    #         HumanMessage(content=review_reply.content),
+    #     ]
+    # )
+    # print(extracter_reply.files)
+    review_name = review_reply.filename
+    error = review_reply.error
+    print(f"---REVIEW INPCARD DONE---")
+    for file in state["file_list"]:
+        if review_name == file.file_name:
+            review_inpcard = file
+            break
+    assert review_inpcard is not None, "No file need to be modified."
+    onefile_state = {
+        "inpcard": review_inpcard,
+        "check": error,
+        "dp_json": state["dp_json"],
+        "review_count": review_count,
+    }
+    return onefile_state
 
 
 def run_inpcard(state: FlowState, config: RunnableConfig):
@@ -221,38 +258,34 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
         # 打印输出
         if result.stderr == "":
             print(f"SUCCESS:\n{result.stdout}")
-            return Command(goto="End", update=state)
+            return {"run_result": "success"}
         else:
             print(f"ERROR:\n{result.stderr}")
-            run_result = state.get("run_result", [])
-            run_result.append(result.stderr)
             if review_count < configuration.MAX_ITER:
-                return Command(goto="modify", update={"run_result": run_result})
-            if state["rearchitect_count"] < configuration.MAX_REARCHITECT:
-                rearchitect = load_chat_model(configuration.rearchitect_model).with_structured_output(RearchitechState)
-                feedback = rearchitect.invoke(
-                    [SystemMessage(content=REARCHITECT_PROMPT.format(Error=state["run_result"][-5:]))]
-                )
-                if "True" in feedback.rearchitect:
-                    print("retry")
-                    return Command(
-                        goto="architect",
-                        update={
-                            "review_count": 0,
-                            "run_result": [],
-                            "history_error": feedback.error,
-                            "reason": [],
-                        },
-                    )
-                else:
-                    print("try to modify again!")
-                    return Command(goto="modify", update={"run_result": run_result, "review_count": review_count - 1})
+                return {"run_result": result.stderr}
             else:
-                print("Up to max iteration.")
-                return Command(goto="End")
+                return {"run_result": "MAX_ITER"}
     else:
         print(f"Moose directory {configuration.MOOSE_DIR} does not exist.")
-        return Command(goto="End")
+        return {"run_result": "success"}
+
+
+def route_run_inpcard(state: FlowState):
+    """Determine the next node based on the model's output.
+
+    This function checks if the model's last message contains tool calls.
+
+    Args:
+        state (State): The current state of the conversation.
+    """
+    if state["run_result"] == "success":
+        print("The simulation task is completed successfully.")
+        return "success"
+    elif state["run_result"] == "MAX_ITER":
+        print("Up to max iteration.")
+        return "success"
+    else:
+        return "fail"
 
 
 # Build workflow
@@ -261,14 +294,26 @@ architect_builder = StateGraph(FlowState)  # v, input=ArchitectInputState, outpu
 # Add the nodes
 architect_builder.add_node("align_simulation_description", align_simulation_description)
 architect_builder.add_node("human", human)
-architect_builder.add_node("architect", architect_all)
+# architect_builder.add_node("architect_input_card", architect_input_card)
 architect_builder.add_node("modify", modify)
+architect_builder.add_node("check_onefile", check_onefile)
+architect_builder.add_node("review_inpcard", review_inpcard)
 architect_builder.add_node("run_inpcard", run_inpcard)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_edge("align_simulation_description", "human")
-architect_builder.add_edge("architect", "run_inpcard")
-architect_builder.add_edge("modify", "run_inpcard")
+# architect_builder.add_edge("architect_input_card", "check_onefile")
+architect_builder.add_edge("modify", "check_onefile")
+architect_builder.add_edge("review_inpcard", "modify")
+# 修改边的定义
+architect_builder.add_conditional_edges(
+    "run_inpcard",
+    route_run_inpcard,
+    {  # Name returned by route_joke : Name of next node to visit
+        "success": END,
+        "fail": "review_inpcard",
+    },
+)
 # architect_builder.add_conditional_edges("review_inpcard", route_review, ["modify"])
 memory = MemorySaver()
 graph = architect_builder.compile(checkpointer=memory)
@@ -284,25 +329,17 @@ if __name__ == "__main__":
                 print(value)
 
     topic = """
-Two-Dimensional Nonlinear Material Mechanics
-Task Description:
-A 1 m × 1 m square plate is fixed on the left edge and subjected to a prescribed horizontal displacement Δx = 0.01 m on the right edge. The material has elastic-plastic behavior with a bilinear hardening model: yield stress σy = 250 MPa, Young’s modulus E = 210 GPa, and hardening modulus H = 1 GPa. Output the final plastic strain distribution and identify the plastic zone.
-
+Construct a Moose multi field coupling test case to simulate the thermal structural coupling behavior of a two-dimensional rectangular thin plate. This task will use the Multiapp feature, the main application to solve heat conduction problems, where one side of the thin plate is heated while the other side remains at a low temperature; The sub application solves structural mechanics problems, fixes one side of the thin plate, and uses the temperature distribution calculated by the main application as the thermal load to analyze the thermal expansion and displacement of the thin plate. The data will be transferred from the main application to the sub applications through Moose's Transfer system to achieve coupling.
 You can make the settings a bit rougher to speed up the simulation
-    """
+"""
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = os.path.join(run_path, f"log/{timestamp}.log")
     sys.stdout = Logger(output_file)
-    subprocess.run(["rm", "-r", configuration.save_dir])
+
     with get_openai_callback() as cb:
         # 运行异步主程序
-        result = asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))
-        code_length = 0
-        for file in result["file_list"]:
-            with open(os.path.join(configuration.save_dir, file.file_name), "r") as f:
-                code_length += len(f.read())
-        print(code_length)
+        asyncio.run(graph.ainvoke({"requirement": topic, "dp_json": dp_json}, config=config))
         print("===== Token Usage =====")
         print("Prompt Tokens:", cb.prompt_tokens)
         print("Completion Tokens:", cb.completion_tokens)
