@@ -13,7 +13,8 @@ class Configuration:
     alignment_model: str = "huoshan/deepseek-v3-250324"
     architect_model: str = "huoshan/deepseek-r1-250120"
     assistant_model: str = "huoshan/deepseek-v3-250324"
-    rearchitect_model: str = "huoshan/deepseek-v3-250324"
+    query_model: str = "huoshan/deepseek-v3-250324"
+    rearchitect_model: str = "huoshan/deepseek-v3-241226"
     review_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
     writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-5-sonnet-latest
     extracter_model: str = "openai/gpt-4o-mini"
@@ -22,7 +23,7 @@ class Configuration:
     # DIR
     ABSOLUTE_PATH: str = "/home/zt/workspace/MooseAgent/src"
     MOOSE_DIR: str = "/home/zt/workspace/mymoose/mymoose-opt"
-    save_dir: str = "/home/zt/workspace/MooseAgent/run_path"
+    save_dir: str = "/home/zt/workspace/MooseAgent/run_path/"
     docs_dir: str = os.path.join(ABSOLUTE_PATH, "database")
     DATABASE_NAME: str = "*.md"
     TEMPERATURE: float = 0.1
