@@ -3,22 +3,23 @@ MooseAgent: 自动化MOOSE代理(集成了一个MOOSE assistant，该模块可�
 ```plaintext
 输入（仿真需求）
 需求对齐：划分仿真任务，确定每个子文件的名字，对每个仿真任务内的细节进行说明。
+### 任务分解
 For inpcard in inpcards:
-    架构师：检索相关仿真案例，给出输入卡基本结构。
-    while True:
-        语法检测：基于规则的初步检测。
-        if pass:
-            break
+    根据需求定义检索内容，检索相关仿真案例。
+    架构师：基于需求、相关仿真案例，给出输入卡基本结构。
+### 多轮迭代纠错
+    执行输入卡。
+    If False:
+        if 小于最大纠错次数：
+            modify:基于数据库给出错误原因和修改后的输入卡
         else:
-            modify:
-                MOOSE助手：基于数据库给出回答，这里基于错误信息给出修改方法和参考资料
-                修改者：基于输入卡和参考资料进行修改
-执行者：执行
-if pass:
-    End.
-else:
-    定位错误：基于报错信息定位出错文件的名字和具体位置。
-    goto modify.
+            判断是否重复一个错误
+            If True：
+                回到任务分解步骤，重新攥写输入卡
+            else:
+                modify:基于数据库给出错误原因和修改后的输入卡
+    Else:
+        SUCCESS
 ```
 
 ![流程图](static/agentflow.png)
