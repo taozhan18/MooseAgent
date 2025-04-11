@@ -1,36 +1,37 @@
 ## Algorithm
-MooseAgent: 自动化MOOSE代理(集成了一个MOOSE assistant，该模块可以单独拿出来用)
+MooseAgent: Automated MOOSE Agent (Integrated with a MOOSE assistant module, which can be used separately)
 ```plaintext
-输入（仿真需求）
-需求对齐：划分仿真任务，确定每个子文件的名字，对每个仿真任务内的细节进行说明。
-### 任务分解
+Input (Simulation Requirements)
+Requirement Alignment: Divide simulation tasks, determine the name of each sub-file, and describe the details within each simulation task.
+### Task Decomposition
 For inpcard in inpcards:
-    根据需求定义检索内容，检索相关仿真案例。
-    架构师：基于需求、相关仿真案例，给出输入卡基本结构。
-### 多轮迭代纠错
-    执行输入卡。
+    Define search content based on requirements and retrieve relevant simulation cases.
+    Architect: Based on requirements and relevant simulation cases, provide the basic structure of the input card.
+### Multi-Round Iterative Error Correction
+    Execute the input card.
     If False:
-        if 小于最大纠错次数：
-            modify:基于数据库给出错误原因和修改后的输入卡
+        if less than the maximum number of error corrections:
+            modify: Provide the cause of the error and the corrected input card based on the database
         else:
-            判断是否重复一个错误
-            If True：
-                回到任务分解步骤，重新攥写输入卡
+            Determine if the same error is repeated
+            If True:
+                Return to the task decomposition step and rewrite the input card
             else:
-                modify:基于数据库给出错误原因和修改后的输入卡
+                modify: Provide the cause of the error and the corrected input card based on the database
     Else:
         SUCCESS
 ```
 
-![流程图](static/agentflow.png)
-AutoComment: 输入卡自动注释Agent
+![agentflow](static/agentflow.png)
+
+AutoComment: Input Card Auto-Comment Agent
 ```plaintext
-1.随机挑选一张未注释输入卡，
-2.查询输入卡相关APP的说明文档
-3.输入说明文档和输入卡
-4.输出带注释输入卡。回到1
+1. Randomly select an unannotated input card,
+2. Query the documentation for the relevant APP of the input card
+3. Input the documentation and the input card
+4. Output the annotated input card. Return to step 1
 ```
-![自动注释流程图](static/autocomment.png)
+![autocommentflow](static/autocomment.png)
 ## Getting Started
 1. Install
 
