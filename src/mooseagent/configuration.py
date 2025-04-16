@@ -33,15 +33,17 @@ class Configuration:
     rag_model: str = "openai/gpt-4o-mini"
 
     # setting for load_vector_database.py
-    rag_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "comment.json")  # comment.json
+    rag_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "comment.json")  # comment.json or dp_detail.json
     batch_size: int = 1  # batch size for adding documents to the vector store
+    vector_store: str = "Chroma"
     PERSIST_DIRECTORY: str = os.path.join(
-        ABSOLUTE_PATH, "database", embedding_function + "_faiss_inpcard"
+        ABSOLUTE_PATH, "database", embedding_function + f"_{vector_store}_inpcard"
     )  # database to save
 
     # database for loading
-    dp_database_path: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + "_faiss_dp")
-    input_database_path: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + "_faiss_inpcard")
+
+    dp_database_path: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + f"_{vector_store}_dp")
+    input_database_path: str = os.path.join(ABSOLUTE_PATH, "database", embedding_function + f"_{vector_store}_inpcard")
 
     # AUTO COMMENT
     use_llm_rag: bool = False

@@ -7,7 +7,7 @@ sys.path.append(run_path)
 from langchain_core.runnables import RunnableConfig
 from langchain.tools.retriever import create_retriever_tool
 from langchain.tools.retriever import create_retriever_tool
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS, Chroma
 from mooseagent.configuration import Configuration
 from langchain_openai import OpenAIEmbeddings
 from mooseagent.utils import BGE_M3_EmbeddingFunction
@@ -21,18 +21,28 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 config = RunnableConfig()
 configuration = Configuration.from_runnable_config(config)
+vector_type = configuration.vector_store
 embedding_function = OpenAIEmbeddings() if configuration.embedding_function == "OPENAI" else BGE_M3_EmbeddingFunction()
 batch_size = configuration.batch_size
 top_k = configuration.top_k
 json_file = configuration.rag_json_path
 try:
-    vectordb_input = FAISS.load_local(
-        configuration.input_database_path, embedding_function, allow_dangerous_deserialization=True
-    )
+    if vector_type.lower() == "faiss":
+        vectordb_input = FAISS.load_local(
+            configuration.input_database_path, embedding_function, allow_dangerous_deserialization=True
+        )
+        vectordb_dp = FAISS.load_local(
+            configuration.dp_database_path, embedding_function, allow_dangerous_deserialization=True
+        )
+    elif vector_type.lower() == "chroma":
+        vectordb_input = Chroma(
+            persist_directory=configuration.input_database_path, embedding_function=embedding_function
+        )
+        vectordb_dp = Chroma(persist_directory=configuration.dp_database_path, embedding_function=embedding_function)
+    else:
+        raise ValueError(f"Unsupported vector store type: {vector_type}")
+
     retriever_input = vectordb_input.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
-    vectordb_dp = FAISS.load_local(
-        configuration.dp_database_path, embedding_function, allow_dangerous_deserialization=True
-    )
     retriever_dp = vectordb_dp.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
     # define tools
     tools = [
