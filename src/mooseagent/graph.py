@@ -12,7 +12,7 @@ import subprocess
 from datetime import datetime
 
 load_dotenv()
-run_path = os.getenv("RUN_PATH")
+run_path = os.getenv("RUN_PATH")  # mooseagent path, not the moose file run_path
 sys.path.append(run_path)
 
 from langgraph.checkpoint.memory import MemorySaver
@@ -217,8 +217,9 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
             "-i",
             os.path.join(configuration.save_dir, exec_name),
         ]
-        result = subprocess.run(command, capture_output=True, text=True)
-        # 打印输出
+        launcher_script = configuration.lanucher_script
+        final_command = [launcher_script] + command
+        result = subprocess.run(final_command, capture_output=True, text=True)
         if result.stderr == "":
             print(f"SUCCESS:\n{result.stdout}")
             return Command(goto="End", update=state)
