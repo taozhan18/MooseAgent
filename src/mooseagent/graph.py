@@ -222,7 +222,7 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
         result = subprocess.run(final_command, capture_output=True, text=True)
         if result.stderr == "":
             print(f"SUCCESS:\n{result.stdout}")
-            return Command(goto="End", update=state)
+            return Command(goto="End", update={"run_result": "success"})
         else:
             print(f"ERROR:\n{result.stderr}")
             run_result = state.get("run_result", [])
