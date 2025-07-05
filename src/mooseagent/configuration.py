@@ -10,14 +10,14 @@ class Configuration:
     """The configurable fields for the chatbot."""
 
     # v3 is unstable in output given format
-    alignment_model: str = "huoshan/deepseek-v3-250324"
+    alignment_model: str = "huoshan/deepseek-v3-241226"
     architect_model: str = "huoshan/deepseek-r1-250120"
-    assistant_model: str = "huoshan/deepseek-v3-250324"
-    query_model: str = "huoshan/deepseek-v3-250324"
+    assistant_model: str = "huoshan/deepseek-v3-241226"
+    query_model: str = "huoshan/deepseek-v3-241226"
     rearchitect_model: str = "huoshan/deepseek-v3-241226"
     review_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-7-sonnet-latest
     writer_model: str = "huoshan/deepseek-v3-241226"  # Defaults to claude-3-5-sonnet-latest
-    extracter_model: str = "openai/gpt-4o-mini"
+    extracter_model: str = "openai/gpt-4o-mini"  # "huoshan/deepseek-v3-250324"
     embedding_function: str = "BGE_M3_EmbeddingFunction"  # "OPENAI"  or "BGE_M3_EmbeddingFunction"
 
     # DIR
@@ -25,6 +25,7 @@ class Configuration:
     MOOSE_DIR: str = "/home/zt/workspace/mymoose/mymoose-opt"
     save_dir: str = "/home/zt/workspace/MooseAgent/run_path/"
     docs_dir: str = os.path.join(ABSOLUTE_PATH, "database")
+    lanucher_script = os.path.join(ABSOLUTE_PATH, "mooseagent", "launcher.sh")
     DATABASE_NAME: str = "*.md"
     TEMPERATURE: float = 0.1
 
@@ -35,7 +36,7 @@ class Configuration:
     # setting for load_vector_database.py
     rag_json_path: str = os.path.join(ABSOLUTE_PATH, "database", "comment.json")  # comment.json or dp_detail.json
     batch_size: int = 1  # batch size for adding documents to the vector store
-    vector_store: str = "Chroma"
+    vector_store: str = "faiss"
     PERSIST_DIRECTORY: str = os.path.join(
         ABSOLUTE_PATH, "database", embedding_function + f"_{vector_store}_inpcard"
     )  # database to save
