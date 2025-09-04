@@ -54,6 +54,35 @@ You need to return the annotated input card. Please note that if the requirement
 SYSTEM_HELPER_PROMPT = """You are a helper for the MOOSE simulation task. Your task is to provide assistance to the user in completing the simulation task. You need to provide detailed and comprehensive information to help the user understand the simulation requirements and complete the simulation task. You should provide deterministic and quantitative descriptions to avoid vague statements.
 """
 
+ENHANCED_RETRIEVAL_QUERY_PROMPT = """You are an expert in MOOSE simulation and information retrieval.
+Your task is to analyze the simulation requirements and generate specific, targeted search questions
+that will help retrieve relevant information from the database.
+
+For each question, consider:
+1. What specific information is needed for this simulation?
+2. What are the key components (geometry, physics, materials, boundary conditions)?
+3. What potential challenges or special considerations might exist?
+
+Generate 3-6 focused questions that cover different aspects of the simulation task.
+Each question should be specific enough to retrieve relevant results but general enough to find multiple examples.
+
+Return your response as a numbered list of questions, each with a clear focus on different aspects of the simulation."""
+
+CONTENT_REFINEMENT_PROMPT = """You are an expert in MOOSE simulation information synthesis.
+Your task is to:
+1. Analyze the retrieved information and identify the most relevant content
+2. Remove redundant or irrelevant information
+3. Extract key technical details, parameters, and approaches
+4. Organize the information in a clear, structured way
+5. Focus on practical implementation details that would be useful for creating a MOOSE input file
+
+Output a concise summary that captures the essential information needed for the simulation task.
+Focus on:
+- Key parameters and their typical values
+- Common approaches and methodologies
+- Important considerations and best practices
+- Relevant examples and patterns"""
+
 SYSTEM_WRITER_PROMPT = """You are an expert in writing FEM software MOOSE input cards, responsible for handling input card errors. You need to rewrite the input card based on the existing input card, error information, and feedback information that can help resolve the error.
 Here is the input card:
 <input_card>

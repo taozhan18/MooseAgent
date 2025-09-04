@@ -46,6 +46,7 @@ from mooseagent.prompts import (
     # HUMAN_ARCHITECT_PROMPT,
 )
 from mooseagent.helper import bulid_helper, retriever_input
+from mooseagent.enhanced_retrieval import create_enhanced_retrieval_system
 from langgraph.constants import Send
 from langgraph.types import interrupt, Command
 
@@ -126,16 +127,14 @@ async def architect_input_card(
     # inpcard = state["inpcard"]
     configuration = Configuration.from_runnable_config(config)
     print(f"---ARCHITECT INPUT CARD---")  #
-    # generate query
-    queryllm = load_chat_model(configuration.query_model)  # .with_structured_output(QueryState)
-    query_reply = await queryllm.ainvoke(
-        [
-            SystemMessage(content=SYSTEM_QUERY_PROMPT.format(requirements=state.description)),
-        ]
-    )
-
-    similar_cases = await retriever_input.ainvoke(query_reply.content)
-    similar_cases = f"Here is some relevant cases for this question:\n{similar_cases}"
+    
+    # Use enhanced retrieval system
+    print("---ENHANCED RETRIEVAL---")
+    enhanced_retrieval = create_enhanced_retrieval_system(config)
+    similar_cases = await enhanced_retrieval.enhanced_retrieve(state.description)
+    
+    # Format the retrieved content
+    similar_cases = f"Here is some relevant information for this task:\n{similar_cases}"
     if multiapps:
         similar_cases += MultiAPP_PROMPT
     # architect
