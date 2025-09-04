@@ -100,9 +100,14 @@ You need to return the modified input card with comments.
 """
 MODIFY_PROMPT = """Here are some error messages about moose input card:
 {error}
+
 Please conduct a thorough review of the following MOOSE input files:
 {inpcard_code}
+
 Please help me to modify the input card based on the error messages.
+
+{human_feedback_prefix}{human_feedback}{human_feedback_suffix}
+
 You should reply like this:
 The error occur in: <filename>.
 The error and reason is that: <Provide the original error message, explain the reason for the error and the method of modification>.

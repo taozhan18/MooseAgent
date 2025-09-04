@@ -47,6 +47,7 @@ from mooseagent.prompts import (
 )
 from mooseagent.helper import bulid_helper, retriever_input
 from mooseagent.enhanced_retrieval import create_enhanced_retrieval_system
+from mooseagent.human_intervention import ErrorAnalyzer, HumanInterventionHandler
 from langgraph.constants import Send
 from langgraph.types import interrupt, Command
 
@@ -88,12 +89,17 @@ def align_simulation_description(state: FlowState, config: RunnableConfig):
 
 
 def human(state: FlowState, config: RunnableConfig):
-    # interrupt_message = "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
-    # feedback = interrupt(interrupt_message)
-    feedback = "yes"
-    # feedback = input(
-    #     "---Please confirm if the above simulation description meets your requirements. If pass, please input 'yes'. If not, please input your feedback.---\nYour feedback: "
-    # )
+    """Handle human feedback for simulation requirement alignment."""
+    configuration = Configuration.from_runnable_config(config)
+
+    if configuration.enable_alignment_feedback:
+        # Use interrupt for human feedback
+        interrupt_message = HumanInterventionHandler.format_alignment_message(str(state["file_list"]))
+        feedback = interrupt(interrupt_message)
+    else:
+        # Automatic approval
+        feedback = "yes"
+
     if feedback == "yes":
         return Command(goto="architect", update=state)
     # If the user provides feedback, regenerate the report plan
@@ -102,6 +108,38 @@ def human(state: FlowState, config: RunnableConfig):
         return Command(goto="align_simulation_description", update={"feedback": feedback})
     else:
         raise TypeError(f"Interrupt value of type {type(feedback)} is not supported.")
+
+
+def human_intervention(state: FlowState, config: RunnableConfig):
+    """Handle human intervention for repeated errors."""
+    configuration = Configuration.from_runnable_config(config)
+
+    if not configuration.enable_human_intervention:
+        # Skip human intervention if disabled
+        return Command(goto="modify", update=state)
+
+    # Format intervention message
+    error_analyzer = ErrorAnalyzer(configuration.error_threshold_for_intervention)
+    intervention_message = HumanInterventionHandler.format_intervention_message(
+        state["error_patterns"], state["run_result"]
+    )
+
+    # Use interrupt to get human feedback
+    human_feedback = interrupt(intervention_message)
+
+    # Parse and apply human feedback
+    parsed_feedback = HumanInterventionHandler.parse_human_feedback(human_feedback)
+
+    # Update state with human feedback
+    updated_state = state.copy()
+    updated_state["human_intervention_feedback"] = human_feedback
+    updated_state["pending_human_intervention"] = False
+
+    # If human provided specific suggestions, add them to the feedback
+    if parsed_feedback["suggestions"]:
+        updated_state["feedback"] = f"Human intervention feedback: {human_feedback}"
+
+    return Command(goto="modify", update=updated_state)
 
 
 async def architect_all(state: FlowState, config: RunnableConfig):
@@ -127,12 +165,12 @@ async def architect_input_card(
     # inpcard = state["inpcard"]
     configuration = Configuration.from_runnable_config(config)
     print(f"---ARCHITECT INPUT CARD---")  #
-    
+
     # Use enhanced retrieval system
     print("---ENHANCED RETRIEVAL---")
     enhanced_retrieval = create_enhanced_retrieval_system(config)
     similar_cases = await enhanced_retrieval.enhanced_retrieve(state.description)
-    
+
     # Format the retrieved content
     similar_cases = f"Here is some relevant information for this task:\n{similar_cases}"
     if multiapps:
@@ -168,12 +206,23 @@ def modify(state: FlowState, config: RunnableConfig):
             inpcard_code = f.read()
         all_input_cards += f"-------------------\nThe file name is: {inpcard.file_name}\nThe description of this file is:\n{inpcard.description}\nThe code of this file is: \n{inpcard_code}-------------------\n\n"
     state["run_result"][-1] = state["run_result"][-1] + "\n" + check_app(all_input_cards, state["dp_json"])
+    
+    # 获取人类反馈
+    human_feedback = state.get("human_intervention_feedback", "")
+    
+    # 构建反馈信息
+    human_feedback_prefix = "Human Intervention Feedback:\n" if human_feedback else ""
+    human_feedback_suffix = "\n" if human_feedback else ""
+    
     messages = [
         {
             "role": "user",
             "content": MODIFY_PROMPT.format(
                 inpcard_code=all_input_cards,
                 error=state["run_result"][-1],
+                human_feedback=human_feedback,
+                human_feedback_prefix=human_feedback_prefix,
+                human_feedback_suffix=human_feedback_suffix,
             ),
         }
     ]
@@ -226,8 +275,29 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
             print(f"ERROR:\n{result.stderr}")
             run_result = state.get("run_result", [])
             run_result.append(result.stderr)
+
+            # Analyze error patterns
+            error_analyzer = ErrorAnalyzer(configuration.error_threshold_for_intervention)
+            error_patterns = error_analyzer.analyze_error_patterns(run_result)
+
+            # Check if human intervention is needed
+            needs_intervention, intervention_reason = error_analyzer.needs_human_intervention(error_patterns)
+
+            # Update state with error patterns
+            updated_state = state.copy()
+            updated_state["run_result"] = run_result
+            updated_state["error_patterns"] = error_patterns
+            updated_state["pending_human_intervention"] = needs_intervention
+
+            if needs_intervention:
+                print(f"Human intervention needed: {intervention_reason}")
+                return Command(goto="human_intervention", update=updated_state)
+
+            # Normal error handling flow
             if review_count < configuration.MAX_ITER:
-                return Command(goto="modify", update={"run_result": run_result})
+                return Command(goto="modify", update=updated_state)
+
+            # Check for rearchitect
             if state["rearchitect_count"] < configuration.MAX_REARCHITECT:
                 rearchitect = load_chat_model(configuration.rearchitect_model).with_structured_output(RearchitechState)
                 feedback = rearchitect.invoke(
@@ -242,6 +312,8 @@ def run_inpcard(state: FlowState, config: RunnableConfig):
                             "run_result": [],
                             "history_error": feedback.error,
                             "reason": [],
+                            "error_patterns": {},
+                            "pending_human_intervention": False,
                         },
                     )
                 else:
@@ -264,11 +336,13 @@ architect_builder.add_node("human", human)
 architect_builder.add_node("architect", architect_all)
 architect_builder.add_node("modify", modify)
 architect_builder.add_node("run_inpcard", run_inpcard)
+architect_builder.add_node("human_intervention", human_intervention)
 # Add edges to connect nodes
 architect_builder.add_edge(START, "align_simulation_description")
 architect_builder.add_edge("align_simulation_description", "human")
 architect_builder.add_edge("architect", "run_inpcard")
 architect_builder.add_edge("modify", "run_inpcard")
+architect_builder.add_edge("human_intervention", "modify")
 # architect_builder.add_conditional_edges("review_inpcard", route_review, ["modify"])
 memory = MemorySaver()
 graph = architect_builder.compile(checkpointer=memory)

@@ -57,6 +57,11 @@ class Configuration:
     MAX_REARCHITECT = 3
     mpi: int = 1
 
+    # Human intervention settings
+    enable_human_intervention: bool = True  # Enable human intervention for repeated errors
+    enable_alignment_feedback: bool = False  # Enable human feedback for alignment confirmation
+    error_threshold_for_intervention: int = 3  # Number of repeated errors before asking for human help
+
     @classmethod
     def from_runnable_config(cls, config: Optional[RunnableConfig] = None) -> "Configuration":
         """Create a Configuration instance from a RunnableConfig."""

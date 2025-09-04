@@ -24,6 +24,9 @@ class FlowState(TypedDict):
     review_count: int  # the number of reviews
     rearchitect_count: int
     history_error: str
+    error_patterns: dict[str, int]  # Track error patterns for human intervention
+    pending_human_intervention: bool  # Flag to indicate human intervention is needed
+    human_intervention_feedback: str  # Feedback from human intervention
 
 
 class OneFileState(TypedDict):
